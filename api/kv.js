@@ -7,8 +7,13 @@
 // 規則與 Google Apps Script 版相同：
 //   - 受測者只能用自己的編號＋通行碼讀寫自己的那一筆，且不能改編號、通行碼、組別、順序。
 //   - 研究者用 ADMIN_SECRET 才能列出、新增、刪除。
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// 連結資料庫時若改了變數前綴（例如 STORAGE_），也能自動找到
+function findEnv(suffixes) {
+  for (const k of Object.keys(process.env)) for (const s of suffixes) if (k.endsWith(s) && process.env[k]) return process.env[k];
+  return '';
+}
+const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || findEnv(['_REST_API_URL', 'REDIS_REST_URL']);
+const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || findEnv(['_REST_API_TOKEN', 'REDIS_REST_TOKEN']);
 const SECRET = process.env.ADMIN_SECRET || '';
 const NS = 'lumi:';
 const INDEX = NS + '__keys';
@@ -30,7 +35,7 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const p = req.query || {};
-      if (p.action === 'ping') return send({ ok: true });
+      if (p.action === 'ping') { await redis(['PING']); return send({ ok: true, storage: 'connected' }); }
       if (p.action === 'get') {
         const k = String(p.key || '');
         const val = parse(await redis(['GET', NS + k]));

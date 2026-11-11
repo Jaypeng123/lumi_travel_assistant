@@ -1536,11 +1536,11 @@ const Store = {
   pin:null,
   async rget(params){
     const r = await fetch(this.remote + '?' + new URLSearchParams({...params, secret:S.secret || sess('lumi-secret') || '', pin:this.pin || sess('lumi-pin') || ''}));
-    const j = await r.json(); if (!j.ok) throw {code:j.error || 'remote', message:j.error}; return j.data;
+    let j; try { j = await r.json(); } catch { throw {code:`http_${r.status}`}; } if (!j.ok) throw {code:j.error || 'remote', message:j.error}; return j.data;
   },
   async rpost(body){
     const r = await fetch(this.remote, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({...body, secret:S.secret || sess('lumi-secret') || ''})});
-    const j = await r.json(); if (!j.ok) throw {code:j.error || 'remote', message:j.error}; return j.data;
+    let j; try { j = await r.json(); } catch { throw {code:`http_${r.status}`}; } if (!j.ok) throw {code:j.error || 'remote', message:j.error}; return j.data;
   },
   async get(path){
     await this.ready;
@@ -1683,7 +1683,7 @@ function viewLogin(){
       if (tab === 'r') {
         if (Store.mode === 'remote') {
           S.secret = pw;
-          try { await Store.list('participants'); } catch (x) { S.secret = null; throw x?.code === 'auth' ? '密碼不正確。' : '目前無法連線到資料儲存，請稍後再試。'; }
+          try { await Store.list('participants'); } catch (x) { S.secret = null; throw x?.code === 'auth' ? '密碼不正確。' : `目前無法連線到資料儲存，請稍後再試。（${x?.code || x?.message || '連線失敗'}）`; }
           sess('lumi-secret', pw);
         } else if (firstAdmin) {
           if (pw.length < 6) throw '密碼至少需要 6 個字元。';
@@ -1703,7 +1703,7 @@ function viewLogin(){
         if (!p || p.pin !== pw) throw '編號或通行碼不正確，請向研究人員確認。';
         startParticipant(p);
       }
-    } catch (x) { err.textContent = typeof x === 'string' ? x : '目前無法連線到資料儲存，請稍後再試。'; }
+    } catch (x) { err.textContent = typeof x === 'string' ? x : `目前無法連線到資料儲存，請稍後再試。${x?.code || x?.message ? `（${x.code || x.message}）` : ''}`; }
     lgo.disabled = false;
   };
 }
