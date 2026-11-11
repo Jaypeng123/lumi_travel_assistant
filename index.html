@@ -3330,7 +3330,7 @@ function drawAdmin(){
     </div>
     <div class="card" style="min-width:0">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">受測者列表</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="csv">匯出 CSV</button><button class="btn ghost sm" id="cpy">複製 CSV</button><button class="btn sm" id="addBtn">${IC.plus.replace('<svg', '<svg width="16" height="16"')}新增受測者</button></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="csv">匯出 CSV</button><button class="btn ghost sm" id="cpy">複製 CSV</button><button class="btn ghost sm" id="bak">備份資料</button><button class="btn ghost sm" id="imp">匯入備份</button><button class="btn sm" id="addBtn">${IC.plus.replace('<svg', '<svg width="16" height="16"')}新增受測者</button></div></div>
       <div class="tablewrap">${L.length ? `<table><thead><tr><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th>干擾感 低／高</th><th>更新時間</th><th></th></tr></thead><tbody>
         ${L.map(p => { const [t, c] = stageText(p); const lo = p.tasks?.low?.questionnaire, hi = p.tasks?.high?.questionnaire; const el = eligibility(p.profile);
           return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${p.name ? `<small class="faint" style="display:block;font-weight:400">${esc(p.name)}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.intr))}／${f2(mean(hi?.intr))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
@@ -3339,6 +3339,8 @@ function drawAdmin(){
   $('#addBtn').onclick = openAddModal;
   $$('tr.clk').forEach(r => r.onclick = () => openDrawer(r.dataset.id));
   $('#csv').onclick = exportCsv;
+  $('#bak').onclick = exportBackup;
+  $('#imp').onclick = importBackup;
   $('#cpy').onclick = async () => { try { await navigator.clipboard.writeText(buildCsv()); toast('已複製 CSV，可貼到 Excel'); } catch { toast('瀏覽器不允許複製，請改用匯出'); } };
 }
 
@@ -3715,6 +3717,34 @@ function buildCsv(){
   return '﻿' + cols.join(',') + '\n' + rows.join('\n');
 }
 
+/* 備份與匯入：在不同儲存位置之間搬移資料（例如 claude.ai 版 → Vercel 版） */
+async function exportBackup(){
+  const study = await Store.get('config/study').catch(() => null);
+  const data = JSON.stringify({type:'lumi-backup', v:1, at:now(), study, participants:AD.list}, null, 1);
+  const name = `lumi-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  if (Store.dl) { try { await Store.dl.save({filename:name, data}); } catch (e) { if (e?.code !== 'declined') toast('下載失敗'); } return; }
+  try { const u = URL.createObjectURL(new Blob([data], {type:'application/json'})); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); } catch { toast('下載失敗'); }
+}
+function importBackup(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.style.display = 'none'; document.body.appendChild(inp);
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0]; inp.remove(); if (!f) return;
+    let b; try { b = JSON.parse(await f.text()); } catch { return toast('檔案格式不正確'); }
+    const ps = (b && b.type === 'lumi-backup' && Array.isArray(b.participants)) ? b.participants.filter(p => p && p.pid) : null;
+    if (!ps) return toast('這不是 Lumi 的備份檔');
+    const dup = ps.filter(p => AD.list.some(x => x.pid === p.pid)).map(p => p.pid);
+    const ok = await confirmModal(`匯入 ${ps.length} 位受測者？`, dup.length ? `以下編號已存在，會被備份檔的資料覆蓋：${dup.join('、')}。` : '不會覆蓋任何現有資料。', '匯入', !!dup.length);
+    if (!ok) return;
+    let done = 0;
+    try {
+      for (const p of ps) { await Store.set('participants/' + p.pid, p); done++; }
+      if (b.study && typeof b.study === 'object') await Store.set('config/study', b.study);
+      toast(`已匯入 ${done} 位受測者`);
+    } catch (e) { toast(`匯入到第 ${done + 1} 位時失敗，請再試一次`); }
+    await loadParticipants(); drawAdmin();
+  };
+  inp.click();
+}
 async function exportCsv(){
   if (!Store.dl) { try { const u = URL.createObjectURL(new Blob([buildCsv()], {type:'text/csv;charset=utf-8'})); const a = document.createElement('a'); a.href = u; a.download = `lumi-pretest-${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); } catch { toast('下載失敗，請改用「複製 CSV」'); } return; }
   try { await Store.dl.save({filename:`lumi-pretest-${new Date().toISOString().slice(0, 10)}.csv`, data:buildCsv()}); }
