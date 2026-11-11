@@ -1,5 +1,8 @@
 {
   "name": "lumi-prototype",
   "private": true,
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "ioredis": "5.4.1"
+  }
 }

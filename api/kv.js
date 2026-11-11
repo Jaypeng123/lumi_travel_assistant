@@ -18,24 +18,33 @@ const SECRET = process.env.ADMIN_SECRET || '';
 const NS = 'lumi:';
 const INDEX = NS + '__keys';
 
+// 若資料庫只提供 redis:// 連線字串（例如選了 Vercel 的「Redis」而非 Upstash），改用 TCP 連線
+const TCP_URL = process.env.REDIS_URL || process.env.KV_URL || findEnv(['_REDIS_URL', 'REDIS_URL']);
+let tcp = null;
 async function redis(cmd) {
-  const r = await fetch(URL_, { method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cmd) });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j.result;
+  if (URL_ && TOKEN) {
+    const r = await fetch(URL_, { method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cmd) });
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    return j.result;
+  }
+  if (!tcp) { const Redis = require('ioredis'); tcp = new Redis(TCP_URL, { maxRetriesPerRequest: 2, lazyConnect: false }); }
+  return tcp.call(cmd[0], ...cmd.slice(1));
 }
+// 只回報與儲存相關的變數「名稱」，不回報內容，方便排除設定問題
+const envNames = () => Object.keys(process.env).filter(k => /REDIS|KV_|UPSTASH|STORAGE|ADMIN_SECRET/.test(k)).sort();
 const isAdmin = s => !!SECRET && String(s || '') === SECRET;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = o => res.status(200).json(o);
-  if (!URL_ || !TOKEN) return send({ ok: false, error: 'storage_not_configured' });
-  if (!SECRET) return send({ ok: false, error: 'admin_secret_not_set' });
+  if (!(URL_ && TOKEN) && !TCP_URL) return send({ ok: false, error: 'storage_not_configured', env: envNames() });
+  if (!SECRET) return send({ ok: false, error: 'admin_secret_not_set', env: envNames() });
   try {
     if (req.method === 'GET') {
       const p = req.query || {};
-      if (p.action === 'ping') { await redis(['PING']); return send({ ok: true, storage: 'connected' }); }
+      if (p.action === 'ping') { await redis(['PING']); return send({ ok: true, storage: 'connected', via: URL_ && TOKEN ? 'rest' : 'tcp' }); }
       if (p.action === 'get') {
         const k = String(p.key || '');
         const val = parse(await redis(['GET', NS + k]));
