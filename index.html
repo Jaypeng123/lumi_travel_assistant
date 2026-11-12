@@ -3200,7 +3200,7 @@ function viewProfile(){
     <div class="eyebrow" style="margin-top:22px">開始前</div>
     <h1 style="font-size:28.5px;margin:6px 0 6px">基本資料與使用經驗</h1>
     <p class="muted" style="margin:0 0 8px">約 2 分鐘。研究資料只以受測者編號分析，僅用於學術研究。</p>
-    <div class="pf-q pf-name" data-k="name"><div class="ql">姓名<small class="faint" style="display:block;font-weight:400;font-size:13.5px">只供研究人員註記用，與研究資料分開保存，分析時只使用編號</small></div><input class="input" id="pf-name" maxlength="20" autocomplete="off" style="max-width:240px" value="${esc(S.p?.name || '')}"></div>
+    <div class="pf-q pf-name" data-k="name"><div class="ql">姓名<small class="faint" style="display:block;font-weight:400;font-size:13.5px">只供研究人員註記用，與研究資料分開保存，分析時只使用編號</small></div><input class="input" id="pf-name" maxlength="20" autocomplete="off" style="max-width:240px" value=""></div>
     <div class="pf-list">${PROFILE.map(f => `<div class="pf-q" data-k="${f.key}"><div class="ql">${f.q}${f.type === 'multi' ? '' : ''}</div>
       ${f.type === 'number' ? `<input class="input" type="number" inputmode="numeric" min="${f.min}" max="${f.max}" id="pf-${f.key}" value="${f.def ?? ''}" style="max-width:160px">`
       : `<div class="pills">${f.options.map(o => `<button type="button" class="pill" data-v="${esc(o)}">${esc(o)}</button>`).join('')}${f.other ? '<button type="button" class="pill" data-v="__other">其他</button>' : ''}</div>
@@ -3241,7 +3241,7 @@ function viewProfile(){
     const miss = left();
     const nm = ($('#pf-name')?.value || '').trim();
     if (!nm && !S.preview) { $('.pf-name').classList.add('miss'); $('.pf-name').scrollIntoView({behavior:'smooth', block:'center'}); toast('請填寫姓名'); return; }
-    if (S.p && nm) S.p.name = nm;
+    if (S.p && nm) { if (S.p.note == null && S.p.name && !S.p.profile) S.p.note = S.p.name; S.p.name = nm; }
     if (miss.length) { miss.forEach(f => $(`.pf-q[data-k="${f.key}"]`).classList.add('miss')); $('.pf-q.miss')?.scrollIntoView({behavior:'smooth', block:'center'}); return; }
     const pr = {};
     PROFILE.forEach(f => {
@@ -3333,7 +3333,7 @@ function drawAdmin(){
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="csv">匯出 CSV</button><button class="btn ghost sm" id="cpy">複製 CSV</button><button class="btn ghost sm" id="bak">備份資料</button><button class="btn ghost sm" id="imp">匯入備份</button><button class="btn sm" id="addBtn">${IC.plus.replace('<svg', '<svg width="16" height="16"')}新增受測者</button></div></div>
       <div class="tablewrap">${L.length ? `<table><thead><tr><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th>干擾感 低／高</th><th>更新時間</th><th></th></tr></thead><tbody>
         ${L.map(p => { const [t, c] = stageText(p); const lo = p.tasks?.low?.questionnaire, hi = p.tasks?.high?.questionnaire; const el = eligibility(p.profile);
-          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${p.name ? `<small class="faint" style="display:block;font-weight:400">${esc(p.name)}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.intr))}／${f2(mean(hi?.intr))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
+          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${pName(p) ? `<small style="display:block;font-weight:400;color:var(--ink-2,#555)">${esc(pName(p))}</small>` : ''}${pNote(p) ? `<small class="faint" style="display:block;font-weight:400">備註：${esc(pNote(p))}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.intr))}／${f2(mean(hi?.intr))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
         </tbody></table>` : `<div class="blank" style="height:auto;padding:36px">${AD.loading ? '讀取中…' : '還沒有受測者。按右上角「新增受測者」建立第一位。'}</div>`}</div>
     </div>`;
   $('#addBtn').onclick = openAddModal;
@@ -3352,7 +3352,7 @@ async function openAddModal(){
     <p class="muted" style="margin:6px 0 18px;font-size:15px">預設值會自動平衡三組人數與任務順序，可以自行修改。</p>
     <div style="display:grid;gap:14px">
       <div class="field"><label for="aId">編號</label><input class="input" id="aId" value="${sug.pid}"></div>
-      <div class="field"><label for="aName">姓名（選填，只顯示在後台，不匯出）</label><input class="input" id="aName" autocomplete="off"></div>
+      <div class="field"><label for="aNote">備註（選填，只顯示在後台，不匯出）</label><input class="input" id="aNote" autocomplete="off" placeholder="例如：同學介紹、線上施測"></div>
       <div class="field"><label for="aMode">代理模式（組別）</label><select class="input" id="aMode">${modeOpts(sug.mode)}</select></div>
       <div class="field"><label for="aOrder">任務順序</label><select class="input" id="aOrder">${orderOpts(sug.order)}</select></div>
       <div class="field"><label for="aPin">通行碼（4 位數字）</label><input class="input" id="aPin" value="${sug.pin}" inputmode="numeric"></div>
@@ -3370,7 +3370,7 @@ async function openAddModal(){
     if (!/^\d{4}$/.test(pin)) return err.textContent = '通行碼請用 4 位數字。';
     if (pid === DEMO_ID) return err.textContent = 'TEST 保留給測試帳號，請換一個編號。';
     if (AD.list.some(p => p.pid === pid)) return err.textContent = '這個編號已經存在。';
-    const p = {pid, pin, name:$('#aName', m).value.trim(), mode:$('#aMode', m).value, order:$('#aOrder', m).value, stage:'new', tasks:{}, createdAt:now(), updatedAt:now()};
+    const p = {pid, pin, note:$('#aNote', m).value.trim(), mode:$('#aMode', m).value, order:$('#aOrder', m).value, stage:'new', tasks:{}, createdAt:now(), updatedAt:now()};
     try { await Store.set('participants/' + pid, p); AD.list.push(p); AD.list.sort((a, b) => a.pid.localeCompare(b.pid, 'en', {numeric:true})); m.remove(); drawAdmin(); openDrawer(pid); toast(`已建立 ${pid}`); }
     catch { err.textContent = '建立失敗，請再試一次。'; }
   };
@@ -3386,6 +3386,8 @@ function confirmModal(title, body, ok, danger){
     $$('[data-v]', m).forEach(b => b.onclick = () => { m.remove(); resolve(b.dataset.v === '1'); });
   });
 }
+const pName = p => p.profile ? (p.name || '') : '';
+const pNote = p => p.note != null ? p.note : (!p.profile ? (p.name || '') : '');
 function closeDrawer(){ $('#drawer')?.remove(); AD.sel = null; $$('tr.clk').forEach(r => r.classList.remove('cur')); }
 function openDrawer(pid){
   const p = AD.list.find(x => x.pid === pid); if (!p) return closeDrawer();
@@ -3397,7 +3399,7 @@ function openDrawer(pid){
   if (!d) { d = document.createElement('div'); d.id = 'drawer'; d.className = 'drawer-wrap'; document.body.appendChild(d); d.onclick = e => { if (e.target === d) closeDrawer(); }; }
   const [t, c] = stageText(p), el = eligibility(p.profile);
   d.innerHTML = `<aside class="drawer${AD.edit ? ' editing' : ''}" role="dialog" aria-modal="true" aria-label="${esc(p.pid)} 明細">
-    <div class="dw-head"><div><div class="eyebrow">受測者</div><h2>${esc(p.pid)}</h2><div class="dw-name" id="dwName">${p.name ? esc(p.name) : '<span class="faint">未填姓名</span>'}<button type="button" class="link" id="dNameBtn">${p.name ? '修改' : '填寫'}</button></div></div><span class="chip ${c}">${t}</span><button type="button" class="icbtn" id="dwClose" aria-label="關閉">${IC.x}</button></div>
+    <div class="dw-head"><div><div class="eyebrow">受測者</div><h2>${esc(p.pid)}</h2><div class="dw-name">${pName(p) ? esc(pName(p)) + '<small class="faint" style="margin-left:6px">受測者填寫</small>' : '<span class="faint">受測者尚未填寫姓名</span>'}</div><div class="dw-name" id="dwName"><span class="faint">備註：</span>${pNote(p) ? esc(pNote(p)) : '<span class="faint">無</span>'}<button type="button" class="link" id="dNameBtn">${pNote(p) ? '修改' : '新增'}</button></div></div><span class="chip ${c}">${t}</span><button type="button" class="icbtn" id="dwClose" aria-label="關閉">${IC.x}</button></div>
     <div class="dw-body">
       <section class="dw-sec">
         <div class="dw-sec-h"><h4>實驗設定</h4>${AD.edit ? '' : (p.stage && p.stage !== 'new') ? '<span class="chip">已開始作答，無法編輯</span>' : '<button type="button" class="btn soft sm" id="dEdit">編輯</button>'}</div>
@@ -3430,9 +3432,9 @@ function openDrawer(pid){
   const ed = $('#dEdit', d); if (ed) ed.onclick = () => { AD.edit = true; openDrawer(pid); };
   const nb = $('#dNameBtn', d); if (nb) nb.onclick = () => {
     const box = $('#dwName', d);
-    box.innerHTML = `<input class="input" id="dNameIn" value="${esc(p.name || '')}" style="height:34px;width:160px;font-size:14px" autocomplete="off"><button type="button" class="btn sm" id="dNameOk">儲存</button>`;
+    box.innerHTML = `<input class="input" id="dNameIn" value="${esc(pNote(p))}" placeholder="備註" style="height:34px;width:180px;font-size:14px" autocomplete="off"><button type="button" class="btn sm" id="dNameOk">儲存</button>`;
     const inp = $('#dNameIn', d); inp.focus();
-    const save = async () => { p.name = inp.value.trim(); p.updatedAt = now(); try { await Store.set('participants/' + p.pid, p); toast('已更新姓名'); } catch { toast('儲存失敗，請再試一次'); } drawAdmin(); openDrawer(pid); };
+    const save = async () => { p.note = inp.value.trim(); if (!p.profile) delete p.name; p.updatedAt = now(); try { await Store.set('participants/' + p.pid, p); toast('已更新備註'); } catch { toast('儲存失敗，請再試一次'); } drawAdmin(); openDrawer(pid); };
     $('#dNameOk', d).onclick = save; inp.onkeydown = e => { if (e.key === 'Enter') save(); };
   };
   $('#dStart', d).onclick = () => { if (p.stage === 'done') return toast('此受測者已完成'); closeDrawer(); S.role = null; sess('lumi-role', null); startParticipant(JSON.parse(JSON.stringify(p))); };
