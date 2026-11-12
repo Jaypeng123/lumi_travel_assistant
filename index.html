@@ -3073,7 +3073,7 @@ function showDoneModal(){
   m.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dmh" style="max-width:440px;text-align:center">
     <div class="done-ic">${IC.check.replace('<svg', '<svg width="26" height="26"')}</div>
     <h2 id="dmh" style="font-size:24px;margin-top:14px">第 ${S.idx + 1} 項任務已完成</h2>
-    <p class="muted" style="margin:8px 0 22px">謝謝你！接下來請填寫一份約 2 分鐘的問卷，分享你在這項任務中的感受。</p>
+    <p class="muted" style="margin:8px 0 22px">接下來請填寫一份約 2 分鐘的問卷。請回想<b>剛才和 Lumi 一起完成任務的過程</b>，不用評價最後的行程或訂單好不好。</p>
     <button class="btn" id="toQ">前往填寫問卷</button></div>`;
   document.body.appendChild(m);
   $('#toQ', m).onclick = () => { m.remove(); go('q'); };
@@ -3655,7 +3655,7 @@ function viewBrief(){
     ['請把它當成真的旅行', '想像你真的要去東京、花自己的錢，照平常的方式做決定。'],
     ['開始任務時', '按左側「複製需求」，再按對話框上方的「貼上需求」送出，之後依畫面和 Lumi 互動。'],
     ['結果不一定完全符合你的理想', 'Lumi 的選項有一定範圍，照平常使用 AI 的方式處理就好，不用一直嘗試。'],
-    ['沒有標準答案', '照自己的步調操作，每個任務後依當下真實的感受填問卷。'],
+    ['我們想了解的是過程中的感受', '行程或訂單的結果沒有好壞之分，照自己的步調操作就好，每個任務後依當下真實的感受填問卷。'],
     ['系統卡住或出錯時', '請告訴研究人員；除此之外，研究人員不會在旁說明操作。'],
   ];
   app.innerHTML = `<div class="stage"><div class="panel intro">
