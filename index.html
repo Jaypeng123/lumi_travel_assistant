@@ -317,6 +317,9 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 #claudeAuth.ok{color:var(--ok);border-color:var(--ok)}
 .kpis.k4{grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr))}
 .bar5.stack{display:flex}
+.pf-pre{margin-top:14px}
+.pf-pre .scale{margin-top:10px;padding-inline:0}.pf-pre .scale .ends span:first-child{justify-self:start}.pf-pre .scale .ends span:last-child{justify-self:end}
+.pf-sub{margin:22px 0 2px;padding-top:18px;border-top:1px solid var(--line);font-size:16.5px;font-weight:600}
 .cells{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:grid;gap:6px}
 .cell{display:grid;grid-template-columns:16px auto 34px 1fr;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
 .cell>b{font-weight:600;color:var(--ink)}
@@ -3164,6 +3167,7 @@ let AD = {tab:'list', list:[], sel:null, loading:true, risk:null, edit:false};
 const AGE_BANDS = ['未滿 20 歲','20–24 歲','25–29 歲','30–34 歲','35–39 歲','40–45 歲','46 歲以上'];
 const AGE_OK = ['20–24 歲','25–29 歲','30–34 歲','35–39 歲','40–45 歲'];
 const PROFILE = [
+  {key:'involve', q:'使用 AI 幫我完成任務時，我比較喜歡：', type:'scale', lo:'全部交給 AI 決定', hi:'每一步都由我確認'},
   {key:'gender', q:'生理性別', type:'single', options:['男','女']},
   {key:'age', q:'年齡', type:'single', options:AGE_BANDS},
   {key:'edu', q:'最高學歷', type:'single', options:['高中職以下','專科／大學','碩士','博士']},
@@ -3181,6 +3185,7 @@ function eligibility(pr){
 }
 const profText = (pr, f) => {
   const v = pr?.[f.key]; if (v == null || v === '') return '—';
+  if (f.type === 'scale') return `${v} 分（1＝${f.lo}，7＝${f.hi}）`;
   const base = Array.isArray(v) ? v.join('、') : String(v);
   const o = pr[f.key + '_other'];
   return o ? `${base}${base ? '、' : ''}其他：${o}` : base;
@@ -3215,8 +3220,10 @@ function viewProfile(){
     <div class="eyebrow" style="margin-top:22px">開始前</div>
     <h1 style="font-size:28.5px;margin:6px 0 6px">基本資料與使用經驗</h1>
     <p class="muted" style="margin:0 0 8px">約 2 分鐘。研究資料只以受測者編號分析，僅用於學術研究。</p>
+    ${PROFILE.filter(f => f.type === 'scale').map(f => `<div class="pf-q pf-pre" data-k="${f.key}"><div class="ql">${f.q}</div>${likertScale(null, f.lo, f.hi)}</div>`).join('')}
+    <div class="pf-sub">基本資料</div>
     <div class="pf-q pf-name" data-k="name"><div class="ql">姓名<small class="faint" style="display:block;font-weight:400;font-size:13.5px">只供研究人員註記用，與研究資料分開保存，分析時只使用編號</small></div><input class="input" id="pf-name" maxlength="20" autocomplete="off" style="max-width:240px" value=""></div>
-    <div class="pf-list">${PROFILE.map(f => `<div class="pf-q" data-k="${f.key}"><div class="ql">${f.q}${f.type === 'multi' ? '' : ''}</div>
+    <div class="pf-list">${PROFILE.filter(f => f.type !== 'scale').map(f => `<div class="pf-q" data-k="${f.key}"><div class="ql">${f.q}${f.type === 'multi' ? '' : ''}</div>
       ${f.type === 'number' ? `<input class="input" type="number" inputmode="numeric" min="${f.min}" max="${f.max}" id="pf-${f.key}" value="${f.def ?? ''}" style="max-width:160px">`
       : `<div class="pills">${f.options.map(o => `<button type="button" class="pill" data-v="${esc(o)}">${esc(o)}</button>`).join('')}${f.other ? '<button type="button" class="pill" data-v="__other">其他</button>' : ''}</div>
          ${f.other ? `<input class="input" id="pfo-${f.key}" placeholder="請填寫" hidden style="margin-top:8px;max-width:360px">` : ''}`}</div>`).join('')}</div>
@@ -3236,6 +3243,7 @@ function viewProfile(){
   PROFILE.forEach(f => {
     const q = $(`.pf-q[data-k="${f.key}"]`);
     if (f.type === 'number') { $(`#pf-${f.key}`).oninput = e => { ans[f.key] = e.target.value === '' ? null : +e.target.value; q.classList.remove('miss'); left(); }; return; }
+    if (f.type === 'scale') { $$('.dot', q).forEach(b => b.onclick = () => { ans[f.key] = +b.dataset.v; $$('.dot', q).forEach(x => x.classList.toggle('sel', x === b)); q.classList.remove('miss'); left(); }); return; }
     const oin = $(`#pfo-${f.key}`);
     if (oin) oin.oninput = () => { ans[f.key + '_other'] = oin.value; left(); };
     $$('.pill', q).forEach(b => b.onclick = () => {
