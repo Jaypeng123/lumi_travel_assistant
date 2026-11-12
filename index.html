@@ -3625,20 +3625,18 @@ async function openStudyModal(){
 /* ---------------- 開始前說明（每位受測者看到相同內容） ---------------- */
 function viewBrief(){
   const pts = [
-    ['網站、航班、飯店都是模擬的', '付款不會真的扣款，也不需要輸入任何真實的個人資料或卡號。'],
-    ['請把它當成真的在規劃自己的旅行', '想像你真的要去東京、真的在花自己的錢，用你平常會有的方式做決定。'],
-    ['沒有標準答案', '這不是在測驗你的能力，請照自己的步調操作，不用趕。'],
-    ['Lumi 能提供的選項有一定範圍', '結果不一定每一項都完全符合你心中的理想安排。遇到這種情況，照你平常使用 AI 的方式處理就好，不需要一直嘗試讓結果完全符合期待。'],
-    ['每個任務完成後有一份問卷', '請依當下真實的感受作答。'],
-    ['任務進行中研究人員不會在旁說明操作', '如果系統卡住或出現錯誤，請舉手告訴研究人員。'],
-    ['你可以隨時決定停止參加', '停止參加不會對你有任何影響。'],
+    ['請把它當成真的旅行', '想像你真的要去東京、花自己的錢，照平常的方式做決定。'],
+    ['開始任務時', '按左側「複製需求」，再按對話框上方的「貼上需求」送出，之後依畫面和 Lumi 互動。'],
+    ['結果不一定完全符合你的理想', 'Lumi 的選項有一定範圍，照平常使用 AI 的方式處理就好，不用一直嘗試。'],
+    ['沒有標準答案', '照自己的步調操作，每個任務後依當下真實的感受填問卷。'],
+    ['系統卡住或出錯時', '請告訴研究人員；除此之外，研究人員不會在旁說明操作。'],
   ];
   app.innerHTML = `<div class="stage"><div class="panel intro">
     <div class="brand">${LOGO}Lumi<small>旅行代理．研究版</small></div>
     <div class="eyebrow" style="margin-top:22px">開始前說明</div>
     <h1 style="margin-top:6px">謝謝你今天來參加</h1>
-    <p class="muted" style="font-size:16px;line-height:1.8;margin:8px 0 0">這是一個關於「AI 旅遊助理使用經驗」的研究，大約需要 15–20 分鐘。<br>等一下你會使用一個叫 <b style="color:var(--ink)">Lumi</b> 的 AI 旅遊助理，完成<b style="color:var(--ink)">兩個旅遊任務</b>。任務內容會顯示在畫面左側；開始時請按「複製需求」，再按對話框上方的「貼上需求」送出，接著依畫面和 Lumi 互動就可以了。</p>
-    <div class="brief-h">有幾點想先跟你說明</div>
+    <p class="muted" style="font-size:16px;line-height:1.8;margin:8px 0 0">接下來約 15–20 分鐘，你會使用 AI 旅遊助理 <b style="color:var(--ink)">Lumi</b> 完成<b style="color:var(--ink)">兩個旅遊任務</b>。</p>
+    <div class="brief-h">開始前請留意</div>
     <ol class="brief-list">${pts.map(([h, t]) => `<li><b>${h}</b><span>${t}</span></li>`).join('')}</ol>
     <div class="actions" style="justify-content:space-between;margin-top:22px">
       <button class="btn ghost sm" id="back">返回登入</button>
@@ -3654,12 +3652,12 @@ async function viewIntro(){
   const st = await loadStudy();
   const blank = t => t ? esc(t) : '<span class="tbd">〔研究者尚未設定〕</span>';
   const sections = [
-    ['研究目的', `本研究想了解使用者與 AI 旅遊代理一起完成旅遊任務時的感受，結果將作為改善 AI 代理設計的參考。`],
-    ['進行方式', `你會先填寫約 2 分鐘的基本資料，接著完成兩項旅遊任務（行程規劃、機票與住宿預訂），每項任務後填寫一份約 3 分鐘的問卷，全程約 15–20 分鐘。每項任務開始時，請按左側「複製需求」，再到對話框上方按「貼上需求」送出給 Lumi，之後依畫面與 Lumi 互動。`],
-    ['模擬環境', `平台中的網站、航空公司、飯店與價格皆為虛構，付款為模擬，<b>不會產生任何費用</b>。請不要輸入真實的個人或付款資料。`],
-    ['資料蒐集與使用', `本研究只記錄你的受測者編號（${esc(S.p ? S.p.pid : "TEST")}）、基本資料、操作紀錄與問卷回答。你填寫的姓名只供研究人員註記用，與研究資料分開保存，分析與發表時一律只使用編號。${Store.mode === 'remote' ? '所有資料儲存於研究者管理之 Google 雲端試算表，僅研究者可存取。' : ''}資料僅作為 ${blank(st.school)}${blank(st.dept)} 碩士學位論文之學術研究使用，<b>不會用於其他用途，也不會提供給第三方</b>。研究結果只以整體統計方式呈現，不會呈現任何個人資料。資料保存至論文完成後 ${blank(st.years)} 年，期滿後銷毀。`],
-    ['風險與權益', `本研究沒有已知的風險。參與完全出於自願，你可以隨時中止，中止不會對你有任何不利影響；如果中止，你也可以要求刪除已蒐集的資料。本研究不評量你的表現，作答沒有對錯。`],
-    ['聯絡方式', `研究生：${blank(st.name)}　指導教授：${st.advisor ? esc(st.advisor.trim().replace(/(教授)?$/, '教授')) : blank(st.advisor)}<br>如有任何疑問，請聯絡：${blank(st.email)}`],
+    ['研究目的', `了解使用者與 AI 旅遊代理一起完成旅遊任務時的感受。`],
+    ['進行方式', `填寫基本資料（約 2 分鐘），完成行程規劃與機票住宿預訂兩項任務，每項任務後填一份問卷（約 3 分鐘），全程約 15–20 分鐘。`],
+    ['模擬環境', `網站、航班、飯店與價格皆為虛構，付款<b>不會產生任何費用</b>。請勿輸入真實的個人或付款資料。`],
+    ['資料使用', `只記錄你的編號（${esc(S.p ? S.p.pid : "TEST")}）、基本資料、操作紀錄與問卷回答；姓名僅供研究人員註記用。資料只用於 ${blank(st.school)}${blank(st.dept)} 碩士論文，以整體統計呈現，<b>不提供第三方</b>，論文完成後保存 ${blank(st.years)} 年即銷毀。`],
+    ['自願參與', `本研究沒有已知風險。你可以隨時中止且不會有任何不利影響，也可以要求刪除已蒐集的資料。`],
+    ['聯絡方式', `研究生：${blank(st.name)}　指導教授：${st.advisor ? esc(st.advisor.trim().replace(/(教授)?$/, '教授')) : blank(st.advisor)}　Email：${blank(st.email)}`],
   ];
   app.innerHTML = `<div class="stage"><div class="panel intro">
     <div class="brand">${LOGO}Lumi<small>旅行代理．研究版</small></div>
