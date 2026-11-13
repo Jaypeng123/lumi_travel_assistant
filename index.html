@@ -317,6 +317,7 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 #claudeAuth.ok{color:var(--ok);border-color:var(--ok)}
 .kpis.k4{grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr))}
 .bar5.stack{display:flex}
+.colsel{font:inherit;font-size:inherit;color:inherit;border:1px solid var(--line-2);border-radius:8px;padding:2px 6px;background:var(--surface);cursor:pointer}
 .pf-pre{margin-top:4px}
 .pf-pre .scale{margin-top:10px;padding-inline:0}.pf-pre .scale .ends span:first-child{justify-self:start}.pf-pre .scale .ends span:last-child{justify-self:end}
 .cells{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:grid;gap:6px}
@@ -1328,7 +1329,7 @@ const LOGO = `<svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><circle c
 const MODES = {collab:'協作確認', pref:'偏好引導', full:'全委託'};
 const RISK = {low:'不涉及金錢交易', high:'涉及金錢交易'};
 const ORDERS = {A:['low','high'], B:['high','low']};
-const PER_CELL = 5; // 每個模式 × 順序 的目標完成人數（3 模式 × 2 順序 × 5 = 30）
+let PER_CELL = 6; // 每個模式 × 順序 的目標完成人數（3 模式 × 2 順序 × 6 = 36），可在「研究資訊」修改
 const ORDER_NAME = {A:'A：先不涉及金錢交易、後涉及金錢交易', B:'B：先涉及金錢交易、後不涉及金錢交易'};
 
 /* 平台皆為虛構，對應台灣常見的平台類型（比價、訂房、民宿短租、票券體驗、交通） */
@@ -3248,7 +3249,7 @@ const stageText = p => {
   const [k, i] = st.split(':');
   return [{task:`進行任務 ${+i + 1}`, q:`填問卷 ${+i + 1}`, between:'任務間休息'}[k], 'warn'];
 };
-let AD = {tab:'list', list:[], sel:null, loading:true, risk:null, edit:false};
+let AD = {tab:'list', list:[], sel:null, loading:true, risk:null, edit:false, col:'intr'};
 
 /* ---------------- 受測者基本資料（依論文 3.1 招募條件設計） ---------------- */
 const AGE_BANDS = ['未滿 20 歲','20–24 歲','25–29 歲','30–34 歲','35–39 歲','40–45 歲','46 歲以上'];
@@ -3376,6 +3377,7 @@ function viewProfile(){
 /* ---------------- 後台 ---------------- */
 async function loadParticipants(){
   AD.loading = true;
+  try { await loadStudy(); } catch {}
   try { AD.list = (await Store.list('participants')).sort((a, b) => a.pid.localeCompare(b.pid, 'en', {numeric:true})); }
   catch (e) { AD.list = []; toast('讀取資料失敗'); }
   AD.loading = false;
@@ -3427,27 +3429,29 @@ function drawAdmin(){
   if (AD.tab === 'sum') return drawSummary(body);
   const L = AD.list, done = L.filter(p => p.stage === 'done'), started = L.filter(p => p.stage && p.stage !== 'new' && p.stage !== 'done');
   const byMode = m => done.filter(p => p.mode === m).length;
-  const pct = n => Math.min(100, n / 30 * 100);
+  const TOTAL = PER_CELL * 6, PER_MODE = PER_CELL * 2;
+  const pct = n => Math.min(100, n / TOTAL * 100);
   const cellDone = (m, o) => done.filter(p => p.mode === m && p.order === o).length;
   const cellMade = (m, o) => L.filter(p => p.mode === m && p.order === o && p.stage !== 'done').length;
   const cellRows = m => `<div class="cells">${['A', 'B'].map(o => { const d = cellDone(m, o), w = cellMade(m, o), need = Math.max(0, PER_CELL - d);
     return `<div class="cell" title="${esc(ORDER_NAME[o])}"><b>${o}</b><span class="dots">${Array.from({length:PER_CELL}, (_, i) => `<i class="${i < d ? 'on' : i < d + w ? 'wip' : ''}"></i>`).join('')}</span><span class="num">${d}/${PER_CELL}</span><span class="${need ? 'need' : 'ok'}">${need ? `缺 ${need}` : '已滿'}${w ? `<small>（${w} 位待測）</small>` : ''}</span></div>`; }).join('')}</div>`;
   body.innerHTML = `
     <div class="kpis k4">
-      <div class="kpi"><div class="kl">完成進度</div><div class="kv">${done.length}<small> / 30 完成</small></div>
+      <div class="kpi"><div class="kl">完成進度</div><div class="kv">${done.length}<small> / ${TOTAL} 完成</small></div>
         <div class="bar5 stack"><i style="width:${pct(done.length)}%"></i><i class="b2" style="width:${pct(started.length)}%"></i><i class="b3" style="width:${pct(L.length - done.length - started.length)}%"></i></div>
-        <div class="kleg"><span><i></i>完成 ${done.length}</span><span><i class="b2"></i>進行中 ${started.length}</span><span><i class="b3"></i>未開始 ${L.length - done.length - started.length}</span><span class="faint">已建立 ${L.length}</span></div><div class="cellsum">還缺 <b>${Math.max(0, 30 - done.length)}</b> 位完成：${['A', 'B'].map(o => `${o} 順序缺 ${Object.keys(MODES).reduce((n, m) => n + Math.max(0, PER_CELL - cellDone(m, o)), 0)}`).join('．')}</div></div>
-      ${Object.entries(MODES).map(([k, v]) => `<div class="kpi"><div class="kl">${v}．完成</div><div class="kv">${byMode(k)}<small> / 10</small></div><div class="bar5"><i style="width:${Math.min(100, byMode(k) * 10)}%"></i></div><div class="kleg"><span class="faint">已建立 ${L.filter(p => p.mode === k).length}</span></div>${cellRows(k)}</div>`).join('')}
+        <div class="kleg"><span><i></i>完成 ${done.length}</span><span><i class="b2"></i>進行中 ${started.length}</span><span><i class="b3"></i>未開始 ${L.length - done.length - started.length}</span><span class="faint">已建立 ${L.length}</span></div><div class="cellsum">還缺 <b>${Object.keys(MODES).reduce((n, m) => n + ['A', 'B'].reduce((x, o) => x + Math.max(0, PER_CELL - cellDone(m, o)), 0), 0)}</b> 位完成：${['A', 'B'].map(o => `${o} 順序缺 ${Object.keys(MODES).reduce((n, m) => n + Math.max(0, PER_CELL - cellDone(m, o)), 0)}`).join('．')}</div></div>
+      ${Object.entries(MODES).map(([k, v]) => `<div class="kpi"><div class="kl">${v}．完成</div><div class="kv">${byMode(k)}<small> / ${PER_MODE}</small></div><div class="bar5"><i style="width:${Math.min(100, byMode(k) / PER_MODE * 100)}%"></i></div><div class="kleg"><span class="faint">已建立 ${L.filter(p => p.mode === k).length}</span></div>${cellRows(k)}</div>`).join('')}
     </div>
     <div class="card" style="min-width:0">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">受測者列表</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="csv">匯出 CSV</button><button class="btn ghost sm" id="cpy">複製 CSV</button><button class="btn ghost sm" id="bak">備份資料</button><button class="btn ghost sm" id="imp">匯入備份</button><button class="btn sm" id="addBtn">${IC.plus.replace('<svg', '<svg width="16" height="16"')}新增受測者</button></div></div>
-      <div class="tablewrap">${L.length ? `<table><thead><tr><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th>干擾感 低／高</th><th>更新時間</th><th></th></tr></thead><tbody>
+      <div class="tablewrap">${L.length ? `<table><thead><tr><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th><select id="colSel" class="colsel" aria-label="要顯示的量表">${SCALES.map(x => `<option value="${x.k}"${x.k === AD.col ? ' selected' : ''}>${x.name}</option>`).join('')}</select> 不涉及／涉及</th><th>更新時間</th><th></th></tr></thead><tbody>
         ${L.map(p => { const [t, c] = stageText(p); const lo = p.tasks?.low?.questionnaire, hi = p.tasks?.high?.questionnaire; const el = eligibility(p.profile);
-          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${pName(p) ? `<small style="display:block;font-weight:400;color:var(--ink-2,#555)">${esc(pName(p))}</small>` : ''}${pNote(p) ? `<small class="faint" style="display:block;font-weight:400">備註：${esc(pNote(p))}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.intr))}／${f2(mean(hi?.intr))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
+          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${pName(p) ? `<small style="display:block;font-weight:400;color:var(--ink-2,#555)">${esc(pName(p))}</small>` : ''}${pNote(p) ? `<small class="faint" style="display:block;font-weight:400">備註：${esc(pNote(p))}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.[AD.col]))}／${f2(mean(hi?.[AD.col]))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
         </tbody></table>` : `<div class="blank" style="height:auto;padding:36px">${AD.loading ? '讀取中…' : '還沒有受測者。按右上角「新增受測者」建立第一位。'}</div>`}</div>
     </div>`;
   $('#addBtn').onclick = openAddModal;
+  { const cs = $('#colSel'); if (cs) { cs.onclick = e => e.stopPropagation(); cs.onchange = () => { AD.col = cs.value; drawAdmin(); }; } }
   $$('tr.clk').forEach(r => r.onclick = () => openDrawer(r.dataset.id));
   $('#csv').onclick = exportCsv;
   $('#bak').onclick = exportBackup;
@@ -3722,17 +3726,17 @@ function drawSummary(body){
 }
 /* ---------- 研究資訊（顯示在受測者的研究說明） ---------- */
 let STUDY = null;
-async function loadStudy(){ try { STUDY = await Store.get('config/study'); } catch { STUDY = null; } STUDY = {school:'國立臺灣科技大學', dept:'', name:'', advisor:'', email:'', years:'3', pin:'1234', ...(STUDY || {})}; return STUDY; }
+async function loadStudy(){ try { STUDY = await Store.get('config/study'); } catch { STUDY = null; } STUDY = {school:'國立臺灣科技大學', dept:'', name:'', advisor:'', email:'', years:'3', pin:'1234', perCell:'6', ...(STUDY || {})}; PER_CELL = Math.max(1, Math.min(20, parseInt(STUDY.perCell, 10) || 6)); return STUDY; }
 async function openStudyModal(){
   const st = await loadStudy();
   const m = document.createElement('div'); m.className = 'modal tall';
-  const f = [['school','學校'],['dept','系所'],['name','研究生姓名'],['advisor','指導教授'],['email','聯絡信箱'],['years','資料保存年限（年）'],['pin','預設通行碼（新增受測者時自動帶入）']];
+  const f = [['school','學校'],['dept','系所'],['name','研究生姓名'],['advisor','指導教授'],['email','聯絡信箱'],['years','資料保存年限（年）'],['pin','預設通行碼（新增受測者時自動帶入）'],['perCell','每個組合的目標人數（3 模式 × 2 順序，總目標 = 此數 × 6）']];
   m.innerHTML = `<form class="panel" style="max-width:520px" id="stf"><h2 style="font-size:24px">研究資訊</h2><p class="muted" style="margin:6px 0 16px;font-size:15px">前六項會顯示在受測者的「研究說明與知情同意」頁面。</p>
     <div style="display:grid;gap:12px">${f.map(([k, l]) => `<div class="field"><label for="st-${k}">${l}</label><input class="input" id="st-${k}" value="${esc(st[k] || '')}"></div>`).join('')}</div>
     <div class="actions" style="justify-content:flex-end"><button type="button" class="btn ghost" id="stc">取消</button><button class="btn" type="submit">儲存</button></div></form>`;
   document.body.appendChild(m);
   $('#stc', m).onclick = () => m.remove();
-  $('#stf', m).onsubmit = async e => { e.preventDefault(); const v = {}; f.forEach(([k]) => v[k] = $(`#st-${k}`, m).value.trim()); try { await Store.set('config/study', v); STUDY = v; m.remove(); toast('已儲存研究資訊'); } catch { toast('儲存失敗，請再試一次'); } };
+  $('#stf', m).onsubmit = async e => { e.preventDefault(); const v = {}; f.forEach(([k]) => v[k] = $(`#st-${k}`, m).value.trim()); try { await Store.set('config/study', v); await loadStudy(); m.remove(); toast('已儲存研究資訊'); if (S.view === 'admin') drawAdmin(); } catch { toast('儲存失敗，請再試一次'); } };
 }
 
 /* ---------------- 開始前說明（每位受測者看到相同內容） ---------------- */
