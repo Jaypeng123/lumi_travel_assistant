@@ -2894,7 +2894,7 @@ function docHtml(editing, editKey, confirmed){
       ${canEdit && editKey === q.key ? `<div class="rp-edit">${[...getOpts(q, a, S.task), ...(q.none ? [{id:'none', title:q.noneTitle || '沒有特別偏好'}] : [])].map(oo => `<button type="button" class="qo rich${(Array.isArray(v) ? v.includes(oo.id) : oo.id === v) ? ' sel' : ''}" data-pick="${oo.id}"><span class="rd"></span><span class="qo-m"><span class="qo-t">${esc(oo.title)}</span>${oo.sub ? `<span class="qo-s">${esc(oo.sub)}</span>` : ''}</span>${oo.price !== undefined ? `<span class="qo-p num">${priceText(q, oo)}</span>` : ''}</button>`).join('')}</div>` : ''}`;
   };
   const sections = T.stages.map(s => `<div class="rp-sec"><div class="rp-sh">${s.label}</div><div class="rp-list">${s.questions.map(row).join('')}</div></div>`).join('');
-  const badge = confirmed ? `<span class="chip ok">${risk === 'low' ? '已確認' : '已付款（模擬）'}</span>` : editing ? '<span class="chip warn">修改中</span>' : (S.task.tx || []).length >= 2 ? '<span class="chip ok">已付款</span>' : '';
+  const badge = confirmed ? (risk === 'high' && S.task.declined ? `<span class="chip">${(S.task.tx || []).length ? '部分付款' : '未付款'}</span>` : `<span class="chip ok">${risk === 'low' ? '已確認' : '已付款（模擬）'}</span>`) : editing ? '<span class="chip warn">修改中</span>' : (S.task.tx || []).length >= 2 ? '<span class="chip ok">已付款</span>' : '';
   if (risk === 'low') {
     return `<div class="doc"><div class="rp-hero low"><div><div class="eyebrow">行程</div><h3>東京5天4夜 自由行</h3><p class="muted">2027/3/20（六）– 3/24（三）．${esc(ansText(qDef('low', 'companions'), a.companions))}${ALL_LOW.find(x => x.id === a.lhotel) ? `．住宿：${esc(ALL_LOW.find(x => x.id === a.lhotel).name)}` : ''}</p></div>${badge}</div>
       ${lowNotes(a)}${itinHtml(a)}${editing ? `<details class="basis" open><summary>修改這份行程的選擇</summary>${sections}</details>` : ''}</div>`;
@@ -2908,7 +2908,7 @@ function orderCardsHtml(open){
   const a = S.task.answers;
   const fo = optOf(qDef('high', 'flight'), a.flight), ho = optOf(qDef('high', 'hotel'), a.hotel), ro = optOf(qDef('high', 'room'), a.room);
   const tx = k => (S.task.tx || []).find(x => x.kind === k);
-  const st = k => tx(k) ? `<span class="chip ok">已付款</span>` : `<span class="chip">待付款</span>`;
+  const st = k => tx(k) ? `<span class="chip ok">已付款</span>` : `<span class="chip">${S.task.declined ? '未付款' : '待付款'}</span>`;
   const H = ALLHOTELS.find(h => h.id === a.hotel);
   const op = open ? ' open' : '';
   const flightCard = fo ? `<details class="oc"${op}><summary>${airlineLogo(fo.code, 36)}<span class="oc-m"><b>${esc(fo.title)}</b><small>TPE ${fo.dep} → NRT ${fo.arr}．3/20 去．3/24 回</small></span><span class="oc-r"><b class="num">${money(payAmount('flight'))}</b>${st('flight')}</span></summary>
@@ -3005,7 +3005,7 @@ function finalConfirm(){
           const fo = optOf(qDef('high', 'flight'), a.flight);
           box.innerHTML = `<button type="button" class="doccard">${docCardHtml()}</button>
             <div class="paysel"><div class="ps-h">選擇要付款的項目</div>${['flight', 'hotel'].map(k => `<label class="ps-r${tx(k) ? ' paid' : ''}"><input type="checkbox" data-pk="${k}"${tx(k) ? ' checked disabled' : sel.has(k) ? ' checked' : ''}><span class="ps-t">${k === 'flight' ? airlineLogo(fo?.code, 28) : `<span class="each-img">${hotelPhoto(a.hotel)}</span>`}<span><b>${payName(k)}</b><small>${esc(ansText(qDef('high', k), a[k]))}</small></span></span><b class="num">${money(payAmount(k))}</b>${tx(k) ? '<span class="chip ok">已付款</span>' : ''}</label>`).join('')}</div>
-            <div class="actions"><button type="button" class="btn" data-paysel="1"></button><button type="button" class="btn ghost" data-edit="1">返回修改</button></div>
+            <div class="actions"><button type="button" class="btn" data-paysel="1"></button><button type="button" class="btn ghost" data-edit="1">返回修改</button><button type="button" class="btn ghost" data-decline="1">${unpaid.length < 2 ? '不付款剩下的項目，結束任務' : '暫不付款，結束任務'}</button></div>
             <div class="redo-row"><span class="faint">覺得方向不對？</span>${unpaid.map(k => `<button type="button" class="link" data-redo="${k}">請 Lumi 重新找${payName(k)}</button>`).join('')}</div><div class="each-need" data-need="any"></div>`;
           const pb = $('[data-paysel]', box);
           const picked = () => $$('[data-pk]', box).filter(x => x.checked && !x.disabled).map(x => x.dataset.pk);
@@ -3035,6 +3035,13 @@ function finalConfirm(){
         await doPay(k); renderDoc(false); updateDocCard(); openSide('doc', false);
         if ((S.task.tx || []).length >= 2) { box.innerHTML = ''; finish('each'); } else draw('each');
       });
+      const dc = $('[data-decline]', box); if (dc) dc.onclick = async () => {
+        const left = ['flight', 'hotel'].filter(k => !(S.task.tx || []).some(x => x.kind === k));
+        const ok = await confirmModal('確定不付款，直接結束任務？', `${left.map(payName).join('、')}不會被訂購，Lumi 整理好的方案仍會保留在右側。結束後一樣會請你填寫問卷。`, '不付款，結束任務');
+        if (!ok) return;
+        S.task.declined = {at:now(), items:left};
+        box.innerHTML = ''; userMsg(dc.textContent); finish((S.task.tx || []).length ? 'partial' : 'decline');
+      };
       $$('[data-redo]', box).forEach(b => b.onclick = () => {
         const k = b.dataset.redo, slot = $(`[data-need="${$('[data-need="any"]', box) ? 'any' : k}"]`, box);
         slot.innerHTML = ''; slot.appendChild(needBox(k === 'flight' ? '例如：想找晚一點出發的航班' : '例如：飯店想離車站近一點、含早餐', t => redo(k, t)));
@@ -3046,7 +3053,15 @@ function finalConfirm(){
 }
 async function afterConfirm(){
   const risk = S.risk;
-  if (risk === 'high') {
+  if (risk === 'high' && S.task.declined) {
+    const txs = S.task.tx || [];
+    if (txs.length) {
+      S.task.orderNo = 'LM-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      await aiMsg(`好的，${S.task.declined.items.map(payName).join('、')}這次先不付款。已付款的${txs.map(x => payName(x.kind)).join('、')}訂單編號是 ${S.task.orderNo}；未付款的方案我保留在右側，之後想訂再告訴我。`, 400);
+    } else {
+      await aiMsg('好的，這次先不付款。我整理好的機票與住宿方案都保留在右側，之後想訂再告訴我就好。', 400);
+    }
+  } else if (risk === 'high') {
     if (!(S.task.tx || []).length) await doPay('all');
     S.task.orderNo = 'LM-' + Math.random().toString(36).slice(2, 8).toUpperCase();
     /* 付款成功回饋：在任務完成彈窗前，讓受試者清楚看到已付款 */
@@ -3060,7 +3075,7 @@ async function afterConfirm(){
   } else {
     await aiMsg('行程已儲存到「我的行程」，祝你旅途愉快！', 400);
   }
-  setTrace('confirm', 'done', risk === 'low' ? '已確認' : '已付款');
+  setTrace('confirm', 'done', risk === 'low' ? '已確認' : S.task.declined ? ((S.task.tx || []).length ? '部分付款' : '未付款') : '已付款');
   renderDoc(false, null, true); updateDocCard(); openSide('doc', false);
   setLive(false, '已完成');
   if (!S.preview) { S.p.tasks = S.p.tasks || {}; S.p.tasks[S.risk] = S.task; S.p.stage = 'q:' + S.idx; await saveP(); }
@@ -3704,7 +3719,7 @@ function buildCsv(){
   const head = ['pid','mode','order','stage','consent_at','done_at','eligible','ineligible_reason'].concat(PROFILE.flatMap(f => f.other ? [`p_${f.key}`, `p_${f.key}_other`] : [`p_${f.key}`]));
   const per = [];
   for (const r of ['low','high']) {
-    per.push(`${r}_position`, `${r}_prompt`, `${r}_duration_s`, `${r}_n_edits`, `${r}_edit_opened`, `${r}_sites`, `${r}_upfront_rt_s`);
+    per.push(`${r}_position`, ...(r === 'high' ? [`${r}_pay_outcome`] : []), `${r}_prompt`, `${r}_duration_s`, `${r}_n_edits`, `${r}_edit_opened`, `${r}_sites`, `${r}_upfront_rt_s`);
     TASKS[r].stages.forEach(s => { per.push(`${r}_rt_${s.key}_s`); s.questions.forEach(q => per.push(`${r}_${q.key}`, `${r}_${q.key}_by`, `${r}_${q.key}_other`, ...(q.pick ? [`${r}_${q.key}_isrec`] : []))); });
     Object.keys(Q).forEach(k => { Q[k].items.forEach((_, i) => per.push(`${r}_${k}${i + 1}`)); if (Q[k].items.length > 1) per.push(`${r}_${k}_mean`); });
   }
@@ -3718,6 +3733,7 @@ function buildCsv(){
     for (const r of ['low','high']) {
       const k = p.tasks?.[r]; if (!k || k.v !== 3) continue; const qq = k.questionnaire || {};
       row[`${r}_position`] = ORDERS[p.order].indexOf(r) + 1;
+      if (r === 'high') row[`${r}_pay_outcome`] = k.declined ? ((k.tx || []).length ? 'partial' : 'none') : 'paid';
       row[`${r}_prompt`] = k.prompt; row[`${r}_duration_s`] = k.durationSec;
       row[`${r}_n_edits`] = (k.edits || []).length; row[`${r}_edit_opened`] = k.editOpened || 0;
       row[`${r}_sites`] = [...new Set((k.searches || []).flatMap(s => s.sites))].join('|');
@@ -3791,7 +3807,7 @@ function drawPreview(body){
         <tr><td>請使用者確認的時機</td><td>每一個決策步驟</td><td>任務開始前</td><td>僅最後</td></tr>
         <tr><td>中途決策</td><td>使用者選擇或確認</td><td>AI 依事前偏好決定</td><td>AI 決定</td></tr>
         <tr><td>付款與訂位人資料</td><td>付款步驟時確認</td><td>任務開始前確認</td><td>直接使用預設資料</td></tr>
-        <tr><td>最後確認頁</td><td colspan="3">確認（付款）／返回修改</td></tr>
+        <tr><td>最後確認頁</td><td colspan="3">確認（付款）／返回修改／暫不付款並結束任務</td></tr>
       </tbody></table></div></div>`;
   const pick = (id, set) => $$(`#${id} .pill`).forEach(b => b.onclick = () => { set(b.dataset.v); $$(`#${id} .pill`).forEach(x => x.classList.toggle('sel', x === b)); });
   let withProfile = true;
