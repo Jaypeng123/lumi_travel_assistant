@@ -1547,7 +1547,7 @@ const TASKS = {
             const sup = {id:'sup', title:bf ? '升等景觀房．含早餐' : '標準房．加購早餐', sub:bf ? '高樓層或景觀面．條件同上' : '每日早餐．條件同上', price:bf ? 2000 : 1600, img:'room'};
             if (h.nonref) return [base, sup];
             return [base, sup, {id:'nr', title:`${h.room.split('．')[0]}．不可退款方案`, sub:'不可取消、不可退款', price:-Math.round(h.per * 4 * .1 / 100) * 100, img:'room'}]; },
-          recFn:a => (a.prio || []).includes('cheap') ? 'nr' : 'std'}),
+          recFn:(a, opts) => (a.prio || []).includes('cheap') && (opts || []).some(o => o.id === 'nr') ? 'nr' : 'std'}),
        ]},
     ],
   },
