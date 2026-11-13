@@ -317,6 +317,8 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 #claudeAuth.ok{color:var(--ok);border-color:var(--ok)}
 .kpis.k4{grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr))}
 .bar5.stack{display:flex}
+.pf-ed .scale{padding-inline:0;grid-template-columns:repeat(7,30px);column-gap:6px}.pf-ed .dot{width:30px;height:30px}
+.pf-ed .scale .ends span:first-child{justify-self:start}.pf-ed .scale .ends span:last-child{justify-self:end}
 .colsel{font:inherit;font-size:inherit;color:inherit;border:1px solid var(--line-2);border-radius:8px;padding:2px 6px;background:var(--surface);cursor:pointer}
 .pf-pre{margin-top:4px}
 .pf-pre .scale{margin-top:10px;padding-inline:0}.pf-pre .scale .ends span:first-child{justify-self:start}.pf-pre .scale .ends span:last-child{justify-self:end}
@@ -1944,6 +1946,7 @@ function newTaskRecord(risk, mode){
 function curMode(){ return S.preview ? S.preview.mode : S.p.mode; }
 
 /* 答案文字 */
+function logErr(err){ console.error(err); try { if (!S.preview && S.p) { (S.p.errors = S.p.errors || []).push({at:now(), risk:S.risk, msg:String(err && err.stack || err).slice(0, 600)}); saveP(); } } catch {} }
 function optOf(q, id, rec = S.task){
   if (id === 'none') return {id, title:q.noneTitle || '沒有特別偏好'};
   if (id === 'unspec') return {id, title:'未指定'};
@@ -2037,7 +2040,7 @@ function viewTask(){
     ct.value = ''; ct.style.height = 'auto'; ct.disabled = true; $('#pasteRow').hidden = true; cs.disabled = true; ct.placeholder = 'Lumi 執行中，請依對話中的指示操作。';
     $('#hero')?.remove();
     userMsg(text);
-    runTask().catch(err => { console.error(err); aiMsg('發生錯誤，請通知研究人員。'); try { if (!S.preview && S.p) { (S.p.errors = S.p.errors || []).push({at:now(), risk:S.risk, msg:String(err && err.stack || err).slice(0, 600)}); saveP(); } } catch {} });
+    runTask().catch(err => { aiMsg('發生錯誤，請通知研究人員。'); logErr(err); });
   };
 }
 
@@ -2567,8 +2570,8 @@ function siteBody(k, kind){
   }
   if (kind === 'checkout') {
     const pk = S.payKind || 'flight';
-    const f = optOf(qDef('high', 'flight'), a.flight), h = optOf(qDef('high', 'hotel'), a.hotel), r = optOf(qDef('high', 'room'), a.room);
-    const lines = [...(pk !== 'hotel' ? [[f.title + '（來回）', money(f.price)]] : []), ...(pk !== 'flight' ? [[h.title + '（4 晚）', money(h.price)], [r.title, priceText(qDef('high', 'room'), r)]] : [])];
+    const txt = key => ansText(qDef('high', key), a[key]) || '—', pr = (key, id) => { try { return money(priceOf(key, id)); } catch { return '—'; } };
+    const lines = [...(pk !== 'hotel' ? [[txt('flight') + '（來回）', pr('flight', a.flight)]] : []), ...(pk !== 'flight' ? [[txt('hotel') + '（4 晚）', pr('hotel', a.hotel)], ...(a.room !== undefined ? [[txt('room'), pr('room', a.room)]] : [])] : [])];
     const card = (a.payF || a.payH) === 'b' ? '8888' : '4242';
     return `${siteNav(k)}<div class="sx-steps"><span class="done">${pk === 'flight' ? '旅客資料' : pk === 'hotel' ? '住客資料' : '旅客與住客資料'}</span><span class="on">付款</span><span>完成</span></div><div class="sx-bk"><div class="bk-l">
       <div class="sx-sh big">付款方式 <small>模擬付款，不會扣款</small></div><div class="sx-pay"><span class="on"><i></i>${card === '8888' ? 'Master' : 'Visa'} •••• ${card}<small>${card === '8888' ? '旅程網 TripGo 會員（已授權）' : '安心付 SafePay 會員（已授權）'}</small></span><span><i></i>新增其他信用卡</span></div>
@@ -2590,7 +2593,8 @@ async function loadWin(w, k, kind, path, delay){
   url.textContent = SITES[k].domain + path; browseStatus(`正在瀏覽 https://${SITES[k].domain}${path}`);
   await wait(380 + Math.random() * 520);
   $('.mw-load', w).classList.remove('on');
-  $('.mw-body', w).innerHTML = siteBody(k, kind);
+  let body; try { body = siteBody(k, kind); } catch (e) { logErr(e); body = `${siteNav(k)}<div class="sx-h">頁面已載入</div>`; }
+  $('.mw-body', w).innerHTML = body;
   $('.mw-st', w).innerHTML = IC.check.replace('<svg', '<svg width="12" height="12"');
   w.classList.add('loaded');
 }
@@ -3006,7 +3010,7 @@ function renderDoc(editing = false, editKey = null, confirmed = false){
   $$('[data-pick]', tab).forEach(b => b.onclick = () => {
     const q = qDef(S.risk, editKey), from = S.task.answers[editKey]; let to = b.dataset.pick;
     if (q && q.type === 'multi') { let arr = [].concat(from || []).filter(x => x !== 'none'); arr = to === 'none' ? ['none'] : arr.includes(to) ? arr.filter(x => x !== to) : [...arr, to]; to = arr.length ? arr : ['none']; }
-    if (JSON.stringify(from) !== JSON.stringify(to)) { S.task.edits.push({key:editKey, from, to, at:now()}); S.task.answers[editKey] = to; renderProgress(); updateDocCard(); }
+    if (JSON.stringify(from) !== JSON.stringify(to)) { S.task.edits.push({key:editKey, from, to, at:now()}); S.task.answers[editKey] = to; if (editKey === 'hotel' && S.risk === 'high') { try { const ro = getOpts(qDef('high', 'room'), S.task.answers, S.task); if (!ro.some(o => o.id === S.task.answers.room)) S.task.answers.room = ro[0].id; } catch {} } renderProgress(); updateDocCard(); }
     renderDoc(true, q && q.type === 'multi' ? editKey : null);
   });
   const dd = $('#docDone', tab); if (dd) dd.onclick = () => (S.task.edits.length > (S.task.editMark || 0) ? refreshAfterEdit() : renderDoc(false));
@@ -3091,7 +3095,8 @@ function finalConfirm(){
             $$('button, input', box).forEach(x => x.disabled = true);
             userMsg(`付款：${ks.map(payName).join('、')}`);
             S.task.payEach = S.task.payEach || unpaid.length > 1;
-            await doPay(ks[0]); renderDoc(false); updateDocCard(); openSide('doc', false);
+            try { await doPay(ks[0]); } catch (e) { logErr(e); if (!tx(ks[0])) S.task.tx.push({kind:ks[0], amount:payAmount(ks[0]), card:'4242', no:'PAY-' + Math.random().toString(36).slice(2, 8).toUpperCase(), at:now(), recovered:true}); }
+            renderDoc(false); updateDocCard(); openSide('doc', false);
             const left = ['flight', 'hotel'].filter(k => !tx(k));
             if (!left.length) { box.innerHTML = ''; finish(S.task.payEach ? 'each' : 'all'); return; }
             const nm = await aiMsg(`${ks.map(payName).join('、')}已付款完成。還有${left.map(payName).join('、')} ${money(left.reduce((t, k) => t + payAmount(k), 0))} 尚未付款；要付款請按「付款」，不需要的話可以直接結束任務。`, 400);
@@ -3531,7 +3536,7 @@ function openDrawer(pid){
       </section>
       <section class="dw-sec">
         <div class="dw-sec-h"><h4>基本資料與經驗</h4>${el ? (el.ok ? '<span class="chip ok">符合招募條件</span>' : '<span class="chip warn">不符招募條件</span>') : ''}</div>
-        ${p.profile ? `${el && !el.ok ? `<p class="warnbox">${el.why.join('；')}</p>` : ''}<dl class="kv2 wide">${PROFILE.map(f => `<dt>${f.q.replace(/（可複選）/, '')}</dt><dd>${esc(profText(p.profile, f))}</dd>`).join('')}</dl>` : '<p class="faint" style="font-size:14.5px;margin:0">受測者尚未填寫。</p>'}
+        ${p.profile ? `${el && !el.ok ? `<p class="warnbox">${el.why.join('；')}</p>` : ''}<dl class="kv2 wide">${PROFILE.map(f => `<dt>${f.q.replace(/（可複選）/, '')}</dt><dd${f.type === 'scale' ? ` data-pfedit="${f.key}"` : ''}>${esc(profText(p.profile, f))}${f.type === 'scale' ? `${p.profile.byAdmin?.[f.key] ? '<small class="faint" style="margin-left:6px">研究者補填</small>' : ''}<button type="button" class="link" data-pfbtn="${f.key}" style="margin-left:8px">${p.profile[f.key] == null ? '補填' : '修改'}</button>` : ''}</dd>`).join('')}</dl>` : '<p class="faint" style="font-size:14.5px;margin:0">受測者尚未填寫。</p>'}
       </section>
       <section class="dw-sec">
         <div class="dw-sec-h"><h4>結果摘要</h4></div>
@@ -3545,6 +3550,18 @@ function openDrawer(pid){
   $('#dwClose', d).onclick = closeDrawer;
   $$('[data-r]', d).forEach(b => b.onclick = () => { AD.risk = b.dataset.r; $$('[data-r]', d).forEach(x => x.classList.toggle('on', x === b)); $('#dwTask', d).innerHTML = taskBlockHtml(p, AD.risk); });
   const ed = $('#dEdit', d); if (ed) ed.onclick = () => { AD.edit = true; openDrawer(pid); };
+  $$('[data-pfbtn]', d).forEach(btn => btn.onclick = () => {
+    const key = btn.dataset.pfbtn, f = PROFILE.find(x => x.key === key), dd = $(`[data-pfedit="${key}"]`, d);
+    let v = p.profile[key] ?? null;
+    dd.innerHTML = `<div class="pf-ed">${likertScale(v, f.lo, f.hi)}<div class="actions" style="margin-top:8px"><button type="button" class="btn sm" data-pfok="1" ${v == null ? 'disabled' : ''}>儲存</button><button type="button" class="btn ghost sm" data-pfx="1">取消</button></div></div>`;
+    $$('.dot', dd).forEach(b => b.onclick = () => { v = +b.dataset.v; $$('.dot', dd).forEach(x => x.classList.toggle('sel', x === b)); $('[data-pfok]', dd).disabled = false; });
+    $('[data-pfx]', dd).onclick = () => openDrawer(pid);
+    $('[data-pfok]', dd).onclick = async () => {
+      p.profile[key] = v; p.profile.byAdmin = {...(p.profile.byAdmin || {}), [key]:now()}; p.updatedAt = now();
+      try { await Store.set('participants/' + p.pid, p); toast('已儲存'); } catch { toast('儲存失敗，請再試一次'); }
+      drawAdmin(); openDrawer(pid);
+    };
+  });
   const nb = $('#dNameBtn', d); if (nb) nb.onclick = () => {
     const box = $('#dwName', d);
     box.innerHTML = `<input class="input" id="dNameIn" value="${esc(pNote(p))}" placeholder="備註" style="height:34px;width:180px;font-size:14px" autocomplete="off"><button type="button" class="btn sm" id="dNameOk">儲存</button>`;
@@ -3793,7 +3810,7 @@ async function viewIntro(){
 }
 
 function buildCsv(){
-  const head = ['pid','mode','order','stage','consent_at','done_at','eligible','ineligible_reason'].concat(PROFILE.flatMap(f => f.other ? [`p_${f.key}`, `p_${f.key}_other`] : [`p_${f.key}`]));
+  const head = ['pid','mode','order','stage','consent_at','done_at','eligible','ineligible_reason'].concat(PROFILE.flatMap(f => f.other ? [`p_${f.key}`, `p_${f.key}_other`] : f.type === 'scale' ? [`p_${f.key}`, `p_${f.key}_source`] : [`p_${f.key}`]));
   const per = [];
   for (const r of ['low','high']) {
     per.push(`${r}_position`, ...(r === 'high' ? [`${r}_pay_outcome`] : []), `${r}_prompt`, `${r}_duration_s`, `${r}_n_edits`, `${r}_edit_opened`, `${r}_sites`, `${r}_upfront_rt_s`);
@@ -3806,7 +3823,7 @@ function buildCsv(){
     const row = {pid:p.pid, mode:MODES[p.mode], order:p.order, stage:p.stage, consent_at:p.consentAt ? new Date(p.consentAt).toISOString() : '', done_at:p.doneAt ? new Date(p.doneAt).toISOString() : ''};
     const el = eligibility(p.profile);
     if (el) { row.eligible = el.ok ? 1 : 0; row.ineligible_reason = el.why.join('；'); }
-    if (p.profile) PROFILE.forEach(f => { const v = p.profile[f.key]; row[`p_${f.key}`] = Array.isArray(v) ? v.join('|') : v; if (f.other) row[`p_${f.key}_other`] = p.profile[f.key + '_other'] || ''; });
+    if (p.profile) PROFILE.forEach(f => { const v = p.profile[f.key]; row[`p_${f.key}`] = Array.isArray(v) ? v.join('|') : v; if (f.other) row[`p_${f.key}_other`] = p.profile[f.key + '_other'] || ''; if (f.type === 'scale' && v != null) row[`p_${f.key}_source`] = p.profile.byAdmin?.[f.key] ? 'researcher' : 'self'; });
     for (const r of ['low','high']) {
       const k = p.tasks?.[r]; if (!k || k.v !== 3) continue; const qq = k.questionnaire || {};
       row[`${r}_position`] = ORDERS[p.order].indexOf(r) + 1;
