@@ -2036,7 +2036,7 @@ function viewTask(){
     ct.value = ''; ct.style.height = 'auto'; ct.disabled = true; $('#pasteRow').hidden = true; cs.disabled = true; ct.placeholder = 'Lumi 執行中，請依對話中的指示操作。';
     $('#hero')?.remove();
     userMsg(text);
-    runTask().catch(err => { console.error(err); aiMsg('發生錯誤，請通知研究人員。'); });
+    runTask().catch(err => { console.error(err); aiMsg('發生錯誤，請通知研究人員。'); try { if (!S.preview && S.p) { (S.p.errors = S.p.errors || []).push({at:now(), risk:S.risk, msg:String(err && err.stack || err).slice(0, 600)}); saveP(); } } catch {} });
   };
 }
 
@@ -2683,7 +2683,8 @@ async function bigWin(k, kind, path){
 }
 async function doBooking(kind){
   const a = S.task.answers;
-  const site = kind === 'flight' ? ((a.fplat || ['skyfare']).find(x => x !== 'airline') || 'airline') : ((a.hplat || [])[0] || 'stay');
+  const used = kind === 'flight' ? pickSites(a.fplat || ['skyfare'], FLIGHT_SITES) : pickSites(a.hplat || ['stay'], ['stay','restly','nestly','tripgo']);
+  const site = used.find(x => x !== 'airline' && SITES[x]) || used.find(x => SITES[x]) || (kind === 'flight' ? 'skyfare' : 'stay');
   const q = qDef('high', kind);
   setTrace(kind, 'run', kind === 'flight' ? '保留機位' : '保留房間');
   const act = activity(kind === 'flight' ? '正在保留機位' : '正在保留房間', [{color:SITES[site].color, mark:SITES[site].mark, text:`${SITES[site].name}．${ansText(q, a[kind])}`}]);
