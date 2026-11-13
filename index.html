@@ -638,6 +638,10 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 .sx-btn.pressed{transform:scale(.94);background:var(--ok)}
 .sx-btn[disabled]{opacity:.45}
 .grab{background:var(--lilac-soft)!important;box-shadow:inset 0 0 0 1px var(--lilac)}
+.indep{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:#FFF6E6;border:1px solid #F3D9A6;color:#7A5410;font-size:15px}
+.indep.sm{margin:4px 0 6px;padding:6px 10px;font-size:13px;border-radius:9px}
+.itin-note{display:flex;gap:8px;align-items:flex-start;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--line-2);color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.itin-note svg{flex:none;width:16px;height:16px;margin-top:3px;color:var(--ink-3)}
 /* 各平台不同版面 */
 .v-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
 .v-tabs span{padding:6px 12px;font-size:13px;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -1414,7 +1418,7 @@ const TASKS = {
   low:{
     title:'東京5天4夜 自由行',
     brief:'請 AI 旅遊代理 Lumi 幫你規劃一趟東京5天4夜的自由行。',
-    facts:['日期：2027 年 3 月 20 日（六）至 3 月 24 日（三）','第一次去東京','機票與住宿已另外訂好，只需要規劃每天的行程'],
+    facts:['日期：2027 年 3 月 20 日（六）至 3 月 24 日（三）','第一次去東京','機票與住宿不用處理，只需要規劃每天的行程'],
     request:'幫我規劃一趟東京5天4夜的自由行，3 月 20 日出發、3 月 24 日回來，這是我第一次去東京。',
     finalLabel:'確認行程', docName:'行程',
     stages:[
@@ -1971,7 +1975,7 @@ function viewTask(){
       <nav class="nav"><a class="on" title="對話">${IC.chat}<span class="rl">對話</span></a><a title="我的行程">${IC.trip}<span class="rl">我的行程</span></a><a title="探索">${IC.compass}<span class="rl">探索</span></a><a title="收藏">${IC.heart}<span class="rl">收藏</span></a></nav>
       <div class="taskcard rl">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><span class="eyebrow" style="white-space:nowrap">第 ${idx + 1} 個任務</span>${S.preview ? `<span class="chip lilac">${MODES[mode]}．${RISK[risk]}</span>` : ''}</div>
-        <h4>${T.title}</h4><p>${T.brief}</p><ul>${T.facts.map(f => `<li>${f}</li>`).join('')}</ul>
+        <h4>${T.title}</h4>${idx === 1 ? '<p class="indep sm">另一趟獨立的旅行，與前一個任務無關。</p>' : ''}<p>${T.brief}</p><ul>${T.facts.map(f => `<li>${f}</li>`).join('')}</ul>
         <button type="button" class="btn soft sm copy-req" data-copy="1">${IC.copy}複製需求</button>
       </div>
       <button type="button" class="icbtn rl-only" id="taskMini" title="任務內容" aria-label="任務內容">${IC.doc}</button>
@@ -2080,7 +2084,7 @@ function showTaskModal(again){
   m.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="tmh">
     <div class="eyebrow">第 ${S.idx + 1} 個任務</div>
     <h2 id="tmh" style="font-size:26.5px;margin-top:6px">${T.title}</h2>
-    <div class="taskbig"><div style="font-weight:500">${T.brief}</div><ul class="muted">${T.facts.map(f => `<li>${f}</li>`).join('')}</ul></div>
+    ${S.idx === 1 ? '<div class="indep">這是<b>另一趟獨立的旅行</b>，與前一個任務無關。</div>' : ''}<div class="taskbig"><div style="font-weight:500">${T.brief}</div><ul class="muted">${T.facts.map(f => `<li>${f}</li>`).join('')}</ul></div>
     <p class="muted" style="margin:0 0 20px;font-size:15.5px">${matchMedia('(max-width:860px)').matches ? `${again ? '' : '開始後，'}請按對話框上方的<b style="color:var(--ink)">「貼上需求」</b>，再按送出交給 Lumi，接著依畫面與 Lumi 互動。` : `${again ? '' : '開始後，'}先按下方<b style="color:var(--ink)">「複製需求」</b>，開始後到對話框上方按<b style="color:var(--ink)">「貼上需求」</b>送出給 Lumi，接著依畫面與 Lumi 互動。`}</p>
     <div class="actions" style="justify-content:flex-end"><button type="button" class="btn soft" data-copy="1">${IC.copy}複製需求</button><button class="btn" id="tmok">${again ? '關閉' : '開始'}</button></div></div>`;
   document.body.appendChild(m);
@@ -2970,7 +2974,7 @@ function docHtml(editing, editKey, confirmed){
   const badge = confirmed ? (risk === 'high' && S.task.declined ? `<span class="chip">${(S.task.tx || []).length ? '部分付款' : '未付款'}</span>` : `<span class="chip ok">${risk === 'low' ? '已確認' : '已付款（模擬）'}</span>`) : editing ? '<span class="chip warn">修改中</span>' : (S.task.tx || []).length >= 2 ? '<span class="chip ok">已付款</span>' : '';
   if (risk === 'low') {
     return `<div class="doc"><div class="rp-hero low"><div><div class="eyebrow">行程</div><h3>東京5天4夜 自由行</h3><p class="muted">2027/3/20（六）– 3/24（三）．${esc(ansText(qDef('low', 'companions'), a.companions))}${ALL_LOW.find(x => x.id === a.lhotel) ? `．住宿：${esc(ALL_LOW.find(x => x.id === a.lhotel).name)}` : ''}</p></div>${badge}</div>
-      ${lowNotes(a)}${itinHtml(a)}${editing ? `<details class="basis" open><summary>修改這份行程的選擇</summary>${sections}</details>` : ''}</div>`;
+      ${lowNotes(a)}${itinHtml(a)}<div class="itin-note">${IC.info || 'ⓘ'}<span>想調整個別景點或餐廳？完整版 Lumi 可以逐一修改；<b>本研究版只開放「返回修改」先前的選擇</b>，或請 Lumi 依你的回答重新安排。</span></div>${editing ? `<details class="basis" open><summary>修改這份行程的選擇</summary>${sections}</details>` : ''}</div>`;
   }
 
   return `<div class="doc"><div class="rp-hero"><div><div class="eyebrow">訂單${S.task.orderNo ? `．${S.task.orderNo}` : ''}</div><h3>東京．3/20 – 3/24</h3><p class="muted">1 位成人．機票 + 住宿 4 晚</p></div><div class="rp-total">${badge}<span class="num">${money(totalHigh(a))}</span></div></div>
@@ -3735,7 +3739,7 @@ function viewBrief(){
   const pts = [
     ['請把它當成真的旅行', '想像你真的要去東京、花自己的錢，照平常的方式做決定。'],
     ['開始任務時', '按左側「複製需求」，再按對話框上方的「貼上需求」送出，之後依畫面和 Lumi 互動。'],
-    ['結果不一定完全符合你的理想', 'Lumi 的選項有一定範圍，照平常使用 AI 的方式處理就好，不用一直嘗試。'],
+    ['結果不一定完全符合你的理想', 'Lumi 的選項有一定範圍。結果出來後可以回頭修改先前的選擇，但無法逐一調整單一景點或餐廳；照平常使用 AI 的方式處理就好，不用一直嘗試。'],
     ['我們想了解的是過程中的感受', '行程或訂單的結果沒有好壞之分，照自己的步調操作就好，每個任務後依當下真實的感受填問卷。'],
     ['系統卡住或出錯時', '請告訴研究人員；除此之外，研究人員不會在旁說明操作。'],
   ];
