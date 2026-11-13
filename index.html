@@ -2328,8 +2328,8 @@ function slotDetail(s, day, a){
   if (/計程車/.test(label)) return {cat:'交通', img:TRANS_IMG.taxi, title:label, sub:desc, desc:'晚上行程結束後搭計程車回飯店，不用再轉乘。', tags:['交通','計程車'], tip:'東京計程車起跳約 NT$ 120，多數可刷卡或用交通卡付款。'};
   if (/機場|搭機|快線|地鐵/.test(txt)) return {cat:'交通', img:/抵達|報到/.test(label) ? TRANS_IMG.airport : /地鐵/.test(txt) ? TRANS_IMG.subway : TRANS_IMG.jr, icon:/快線|前往機場/.test(label) ? 'train' : 'plane', hue:215, title:label, sub:desc, desc:label.includes('報到') ? '國際線建議起飛前 2 小時報到，免稅店在出境後。' : '成田機場到市區可搭機場快線，約 1 小時，車上有行李區。', tags:['交通'], tip:'交通卡可在機場售票機購買或加值。'};
   const lh = ALL_LOW.find(x => x.id === a.lhotel);
-  if (lh && /入住|退房/.test(label)) return {cat:'住宿', img:HOTEL_IMG[lh.id] || null, icon:/退房/.test(label) ? 'bag' : 'bell', hue:262, title:lh.name, sub:label, desc:`${lh.walk}．${lh.room}．評分 ${lh.score}。${lh.extra}。`, tags:lh.tags.map(t => TAGNAME[t]).filter(Boolean), tip:/退房/.test(label) ? '退房後可把行李寄放在櫃台，回程前再取。' : '入住時間一般為 15:00 後。'};
-  if (/入住|退房|飯店|回飯店/.test(label)) return {cat:'住宿', icon:/休息/.test(label) ? 'bed' : /退房|寄放/.test(label) ? 'bag' : 'bell', hue:262, title:label, sub:desc, desc:label.includes('入住') ? '辦理入住後先放行李，稍作休息再出門。' : label.includes('退房') ? '退房後可把行李寄放在櫃台，回程前再取。' : '回飯店休息，保留體力。', tags:['住宿'], tip:'入住時間一般為 15:00 後。'};
+  if (lh && /入住|退房/.test(label)) return {cat:'住宿', img:HOTEL_IMG[lh.id] || null, icon:/退房/.test(label) ? 'bag' : 'bell', hue:262, title:lh.name, sub:label, desc:`${lh.walk}．${lh.room}．評分 ${lh.score}。${lh.extra}。`, tags:lh.tags.map(t => TAGNAME[t]).filter(Boolean), tip:/退房/.test(label) ? `退房時間為 ${lh.checkout || '11:00'} 前；退房後可把行李寄放在櫃台，回程前再取。` : `入住時間為 ${lh.checkin || '15:00'} 後。`};
+  if (/入住|退房|飯店|回飯店/.test(label)) return {cat:'住宿', icon:/休息/.test(label) ? 'bed' : /退房|寄放/.test(label) ? 'bag' : 'bell', hue:262, title:label, sub:desc, desc:label.includes('入住') ? '辦理入住後先放行李，稍作休息再出門。' : label.includes('退房') ? '退房後可把行李寄放在櫃台，回程前再取。' : '回飯店休息，保留體力。', tags:['住宿'], tip:label.includes('退房') ? '退房時間一般為 11:00 前。' : label.includes('入住') ? '入住時間一般為 15:00 後。' : ''};
   const hit = PLACE_INFO.find(([w]) => txt.includes(w));
   if (hit) { const v = hit[1], pr = Object.entries(PRICE_TXT).find(([w]) => txt.includes(w));
     return {cat:'景點', img:v.ph ? ((ATT2[v.ph] || {}).w || ATT_IMG[v.ph]) : null, th:v.ph ? ((ATT2[v.ph] || {}).t || ATT_IMG[v.ph]) : null, ill:v.ill || 'city', hue:hashN(hit[0]) % 120, title:label, sub:desc, desc:v.d, tags:v.tags, tip:v.tip + (pr ? `．${pr[1]}` : ''), src:`旅圖 Atlasy．評分 ${v.r}（${v.n.toLocaleString()} 則評論）`}; }
@@ -2358,7 +2358,7 @@ function showDetail(x){
   m.innerHTML = `<div class="panel it-pop" role="dialog" aria-modal="true" aria-labelledby="ith"><div class="it-hero">${itPic(x, true)}<span class="it-cat">${x.cat}</span><button type="button" class="it-x" aria-label="關閉">×</button></div>
     <div class="it-body">${x.day ? `<small class="faint num">Day ${x.day}．${x.time}</small>` : ''}<h2 id="ith">${esc(x.title)}</h2>${x.sub ? `<p class="muted it-sub">${esc(x.sub)}</p>` : ''}
     <div class="it-tags">${x.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
-    <p class="it-desc">${esc(x.desc)}</p><div class="it-tip"><b>小提醒</b>${esc(x.tip)}</div>${x.src ? `<p class="faint it-src">資料來源：${esc(x.src)}</p>` : ''}</div></div>`;
+    <p class="it-desc">${esc(x.desc)}</p>${x.tip ? `<div class="it-tip"><b>小提醒</b>${esc(x.tip)}</div>` : ""}${x.src ? `<p class="faint it-src">資料來源：${esc(x.src)}</p>` : ''}</div></div>`;
   document.body.appendChild(m);
   const close = () => { m.remove(); document.removeEventListener('keydown', key); };
   const key = e => { if (e.key === 'Escape') close(); };
