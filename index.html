@@ -638,6 +638,57 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 .sx-btn.pressed{transform:scale(.94);background:var(--ok)}
 .sx-btn[disabled]{opacity:.45}
 .grab{background:var(--lilac-soft)!important;box-shadow:inset 0 0 0 1px var(--lilac)}
+/* 各平台不同版面 */
+.v-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.v-tabs span{padding:6px 12px;font-size:13px;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px}
+.v-tabs span.on{color:var(--c,#2E7CF6);border-color:var(--c,#2E7CF6);font-weight:600}
+.v-cal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.v-cal span{display:flex;flex-direction:column;align-items:center;padding:6px 2px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.v-cal span.on{border-color:#2E7CF6;background:#EAF2FF}.v-cal small{font-size:11px;color:var(--ink-3)}.v-cal b{font-size:12px}
+.v-chips{display:flex;flex-wrap:wrap;gap:6px}
+.v-chips span{padding:3px 10px;border-radius:99px;border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.v-chips span.on{background:#2E7CF6;border-color:#2E7CF6;color:#fff}
+.v-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.v-fc{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:6px;background:var(--surface)}
+.v-fc-h{display:flex;align-items:center;gap:8px}.v-fc-h>span{flex:1;display:flex;flex-direction:column;min-width:0}.v-fc-h small{font-size:11px;color:var(--ink-3)}
+.v-pr{color:#2E7CF6;font-size:14px}
+.v-fc-t{display:flex;align-items:center;gap:8px}.v-fc-t b{font-size:15px}.v-fc-t i{flex:1;height:1px;background:var(--line-2)}
+.v-hero{padding:14px 16px;border-radius:10px;background:linear-gradient(120deg,var(--c),#0E1B33);color:#fff;display:flex;flex-direction:column;gap:2px}
+.v-hero b{font-size:15px}.v-hero small{opacity:.8;font-size:12px}
+.v-fare,.v-cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+.v-fare th,.v-cmp th{text-align:left;font-weight:500;color:var(--ink-3);padding:6px;border-bottom:2px solid var(--line);font-size:12px}
+.v-fare td,.v-cmp td{padding:7px 6px;border-bottom:1px solid var(--line)}
+.v-fare .v-sel{font-weight:700;color:var(--ink)}
+.v-fn{display:inline-flex;align-items:center;gap:6px}.v-fn>span{display:flex;flex-direction:column}.v-fn small{font-size:11px;color:var(--ink-3)}
+.v-cmp td.low{color:#1F8F5F;font-weight:700;background:#E9F7EF}
+.v-trend{display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:12px;align-items:end;padding:10px 12px;border-radius:10px;background:#F3EEFF}
+.v-trend>div:first-child{display:flex;flex-direction:column}.v-trend small{font-size:11.5px;color:var(--ink-3)}
+.v-bars{display:flex;align-items:flex-end;gap:3px;height:44px}.v-bars i{flex:1;background:#CBBDF2;border-radius:2px 2px 0 0}.v-bars i.on{background:#7A4BD9}
+.v-pills{display:flex;gap:6px}.v-pills span{padding:4px 12px;border-radius:8px;background:var(--sunk);font-size:12.5px}.v-pills span.on{background:#7A4BD9;color:#fff}
+.v-rows{display:grid;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.v-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:8px 10px;border-top:1px solid var(--line);background:var(--surface)}
+.v-row:first-child{border-top:0}
+.v-rt{display:flex;flex-direction:column;min-width:0}.v-rt small,.v-rd small{font-size:11.5px;color:var(--ink-3)}.v-rd{display:flex;flex-direction:column;align-items:flex-end}
+.v-promo{padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,#FFE8D2,#FFF6EC);color:#A4521A;font-weight:600;font-size:12.5px}
+.v-rank{display:grid;gap:6px}
+.v-rk{display:grid;grid-template-columns:24px auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.v-n{width:24px;height:24px;border-radius:6px;background:#D9772B;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+.v-badge{font-style:normal;font-size:11px;color:#D9772B;border:1px solid #F2C29B;border-radius:4px;padding:0 5px;width:max-content;margin-top:2px}
+.v-split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:8px;min-height:240px}
+.v-map{position:relative;border-radius:10px;background:#E8F0E6;overflow:hidden;min-height:220px}
+.v-road{position:absolute;background:#fff}.v-road.a{left:0;right:0;top:48%;height:6px;transform:rotate(-8deg)}.v-road.b{top:0;bottom:0;left:44%;width:6px;transform:rotate(12deg)}
+.v-river{position:absolute;left:-10%;right:-10%;top:72%;height:14px;background:#BFD9EE;transform:rotate(6deg)}
+.v-pin{position:absolute;transform:translate(-50%,-50%);background:#169486;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap}
+.v-ml{position:absolute;left:8px;bottom:6px;font-size:11px;color:var(--ink-3)}
+.v-hl{display:grid;gap:6px;align-content:start}
+.v-hi{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.v-hp{width:48px;height:48px;border-radius:8px;overflow:hidden;display:block}.v-hp img,.v-hp svg{width:100%;height:100%;object-fit:cover;display:block}
+.v-hi>b small{font-size:11px;color:var(--ink-3);font-weight:400}
+.v-hgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v-hc{display:grid;gap:3px;border-radius:12px;padding:6px;background:var(--surface);border:1px solid var(--line)}
+.v-hci{position:relative;display:block;aspect-ratio:16/10;border-radius:8px;overflow:hidden}.v-hci img,.v-hci svg{width:100%;height:100%;object-fit:cover;display:block}
+.v-hci em{position:absolute;right:6px;top:6px;font-style:normal;background:#2E7CF6;color:#fff;font-weight:700;font-size:11.5px;padding:1px 6px;border-radius:6px}
+.v-hc small{font-size:11.5px;color:var(--ink-3)}
 .mw .cursor{position:absolute;left:0;top:0;transition:transform .5s cubic-bezier(.4,.1,.2,1),opacity .2s;z-index:4}
 /* doc */
 #tab-doc{padding:14px}
@@ -951,7 +1002,8 @@ details.basis[open]{padding-bottom:12px}
 .side-status .ss-t{color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
 .paysel{display:grid;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
 .ps-h{font-size:14px;color:var(--ink-3)}
-.ps-r{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.ps-r{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+.ps-r>.btn.sm{flex:none;min-width:64px}
 .ps-r input{width:18px;height:18px;accent-color:var(--ink);flex:none}
 .ps-r .ps-t{flex:1;display:flex;align-items:center;gap:10px;min-width:0}.ps-r .ps-t span{display:flex;flex-direction:column;min-width:0}.ps-r small{color:var(--ink-3);font-size:13px}
 .ps-r.paid{opacity:.7;cursor:default}
@@ -1463,6 +1515,8 @@ const TASKS = {
           options:[{id:'lo', title:'NT$ 4,500 以下'},{id:'mid', title:'NT$ 4,500–6,000'},{id:'hi', title:'NT$ 6,000 以上'}]}),
         Q_({key:'arrive', label:'預計抵達時間', q:'預計幾點抵達飯店辦理入住？', type:'single', other:true, ph:'例如：晚上 11 點以後才會到', def:'eve',
           options:[{id:'aft', title:'下午', sub:'15:00–18:00'},{id:'eve', title:'傍晚', sub:'18:00–21:00'},{id:'late', title:'深夜', sub:'21:00 以後'}]}),
+        Q_({key:'roomreq', label:'房間需求', pref:true, q:'房間有沒有特別的需求？（可複選）', prefQ:'訂房時，房間有沒有特別的需求？（可複選）', type:'multi', none:true, other:true, ph:'例如：想要兩張床', def:['none'],
+          options:[{id:'nosmoke', title:'禁菸房'},{id:'high', title:'高樓層'},{id:'quiet', title:'安靜的房間', sub:'遠離電梯與製冰機'}]}),
        ]},
       {key:'hotel', label:'選擇住宿與房型', book:'hotel', search:{title:'比較住宿與房價', kind:'hotel', sites:a => pickSites(a.hplat || ['stay','restly','nestly'], ['stay','restly','nestly','tripgo'])},
        intro:(n, a) => `我比較了 ${n} 個平台的住宿，依你在意的條件排好了${[].concat(a.area || []).filter(x => HOTELS[x]).length ? `（都在${[].concat(a.area).filter(x => HOTELS[x]).map(x => qDef('high', 'area').options.find(o => o.id === x).title).join('、')}）` : ''}。`,
@@ -1487,11 +1541,6 @@ const TASKS = {
             if (h.nonref) return [base, sup];
             return [base, sup, {id:'nr', title:`${h.room.split('．')[0]}．不可退款方案`, sub:'不可取消、不可退款', price:-Math.round(h.per * 4 * .1 / 100) * 100, img:'room'}]; },
           recFn:a => (a.prio || []).includes('cheap') ? 'nr' : 'std'}),
-       ]},
-      {key:'pay', label:'付款', pay:'all', intro:(n, a) => `機位和房間都已幫你保留（機票 ${money(payAmount('flight'))}、住宿 ${money(payAmount('hotel'))}）。想先確認這次要付款哪些項目。`,
-       questions:[
-        Q_({key:'payItems', label:'付款項目', q:'這次要付款哪些項目？（可複選）', prefQ:'到付款時，要付款哪些項目？（可複選）', type:'multi', pref:true, def:['flight','hotel'],
-          options:[{id:'flight', title:'機票', sub:'來回機票'},{id:'hotel', title:'住宿', sub:'4 晚住宿與房型'}]}),
        ]},
     ],
   },
@@ -1848,8 +1897,9 @@ function needBox(placeholder, onSend){
   const w = document.createElement('div'); w.className = 'need';
   w.innerHTML = `<input class="input" placeholder="${esc(placeholder)}"><button type="button" class="btn sm">請 Lumi 重新找</button>`;
   const inp = $('input', w), btn = $('button', w);
-  const go = () => { const t = inp.value.trim(); if (!t) return inp.focus(); btn.disabled = true; inp.disabled = true; onSend(t); };
+  const go = () => { const t = inp.value.trim(); btn.disabled = true; inp.disabled = true; onSend(t); };
   btn.onclick = go; inp.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); go(); } };
+  inp.placeholder = placeholder + '（可不填，直接按右側按鈕）';
   setTimeout(() => inp.focus(), 50);
   return w;
 }
@@ -2088,6 +2138,7 @@ setInterval(updateWorkPill, 400);
 /* 手機版：工作區蓋住整個畫面時，把對話裡的確認／付款按鈕同步到工作區底部 */
 function updateSideCta(){
   const cta = $('#sideCta'); if (!cta) return;
+  if (!cta.hidden || cta.innerHTML) { cta.hidden = true; cta.innerHTML = ''; cta.dataset.k = ''; } return; // 決策按鈕只留在對話中
   const open = $('#shell')?.classList.contains('has-side') && $('#tab-doc') && !$('#tab-doc').hidden && !$('#tab-doc .doc-refresh');
   const box = open ? [...$$('.msg.ai .actions')].reverse().find(x => x.querySelector('[data-final],[data-paysel],[data-pay],[data-ok]') && x.offsetParent !== null) : null;
   const btns = box ? [...box.querySelectorAll('button')].filter(b => !b.disabled) : [];
@@ -2419,6 +2470,7 @@ function illo(kind, hue = 20){
 }
 const stars = n => '★★★★★'.slice(0, Math.round(n)) + '☆☆☆☆☆'.slice(0, 5 - Math.round(n));
 function siteNav(k){ const s = SITES[k]; return `<div class="sx-nav" style="--c:${s.color}">${s.word ? `<img class="sx-word" src="${s.word}" alt="${esc(s.name)}">` : `<span class="sx-logo">${s.mark}</span><b>${s.short}</b>`}<span class="sx-links"><span>${s.type}</span><span>登入</span></span></div>`; }
+const vTabs = on => `<div class="v-tabs">${['機票', '住宿', '票券', '租車'].map((t, i) => `<span class="${i === on ? 'on' : ''}">${t}</span>`).join('')}</div>`;
 function siteBody(k, kind){
   const a = S.task.answers;
   if (kind === 'route') {
@@ -2442,10 +2494,27 @@ function siteBody(k, kind){
   if (kind === 'flight') {
     let fl = getOpts(qDef('high', 'flight'), a, S.task);
     if (k === 'airline') fl = fl.filter(o => o.code === 'CF' || o.code === 'SL');
-    const adj = {skyfare:0, tripgo:150, airline:0}[k] || 0;
+    const adj = {skyfare:0, tripgo:150, airline:0, flyhub:80, jetgo:-50, farely:0}[k] || 0;
     const cheapest = Math.min(...fl.map(o => o.price + adj));
     const tsel = [].concat(a.time || []).filter(x => !['none','x'].includes(x));
     const als = [...new Set(fl.map(o => o.al))];
+    const alName = o => esc(AIRLINES[o.al].name), fno = o => `${o.code} ${o.id.slice(2)}`, xfer = o => o.transfer ? '轉機 1 次' : '直飛';
+    if (k === 'tripgo') return `${siteNav(k)}${vTabs(0)}
+      <div class="v-cal">${['3/18（四）','3/19（五）','3/20（六）','3/21（日）','3/22（一）'].map((d, i) => `<span class="${i === 2 ? 'on' : ''}"><small>${d}</small><b class="num">${money(cheapest + [900, 400, 0, 600, 1200][i])}</b></span>`).join('')}</div>
+      <div class="v-chips">${['直飛', '含托運行李', '可累積里程', '上午出發', '晚上出發'].map((c, i) => `<span class="${i < 1 ? 'on' : ''}">${c}</span>`).join('')}</div>
+      <div class="v-grid">${fl.slice(0, 4).map(o => `<div class="v-fc" data-o="${o.id}"><div class="v-fc-h">${airlineLogo(o.code, 24)}<span><b>${alName(o)}</b><small>${fno(o)}</small></span><b class="num v-pr">${money(o.price + adj)}</b></div><div class="v-fc-t"><b class="num">${o.dep}</b><i></i><b class="num">${o.arr}</b></div><small class="faint">${o.dur}．${xfer(o)}．回程 ${esc(o.ret || '')}</small></div>`).join('')}</div>`;
+    if (k === 'airline') return `${siteNav(k)}<div class="v-hero" style="--c:${SITES[k].color}"><b>官網直購．會員專屬票價</b><small>台北 TPE ⇄ 東京 NRT．3/20（六）去．3/24（三）回．1 位成人</small></div>
+      <div class="sx-h">選擇去回程航班 <small>票價為來回含稅</small></div>
+      <table class="v-fare"><thead><tr><th>航班</th><th>去程</th><th>回程</th><th>經濟艙</th><th>豪華經濟艙</th></tr></thead><tbody>${fl.slice(0, 5).map(o => `<tr data-o="${o.id}"><td><span class="v-fn">${airlineLogo(o.code, 20)}<b>${fno(o)}</b></span></td><td class="num">${o.dep} → ${o.arr}</td><td class="num">${esc(o.ret || '')}</td><td class="num v-sel">${money(o.price + adj)}</td><td class="num faint">${money(o.price + adj + 6800)}</td></tr>`).join('')}</tbody></table>`;
+    if (k === 'flyhub') return `${siteNav(k)}<div class="v-trend"><div><b>價格趨勢．台北 → 東京</b><small>目前比過去 30 天平均便宜 8%，是不錯的購買時機</small></div><div class="v-bars">${[62, 70, 58, 74, 80, 66, 54, 48, 60, 72, 68, 76].map((h, i) => `<i style="height:${h}%" class="${i === 7 ? 'on' : ''}"></i>`).join('')}</div></div>
+      <div class="v-pills"><span class="on">最佳</span><span>最便宜</span><span>最快</span><span>最早出發</span></div>
+      <div class="v-rows">${fl.slice(0, 5).map(o => `<div class="v-row" data-o="${o.id}">${airlineLogo(o.code, 22)}<span class="v-rt"><b class="num">${o.dep} – ${o.arr}</b><small>${alName(o)}．${fno(o)}</small></span><span class="v-rd"><b class="num">${o.dur}</b><small>${xfer(o)}</small></span><b class="num">${money(o.price + adj)}</b></div>`).join('')}</div>`;
+    if (k === 'jetgo') return `${siteNav(k)}<div class="v-promo">春季早鳥｜指定航班線上刷卡，再折 NT$ 300</div>
+      <div class="sx-h">旅行社嚴選航班 <small>專人代訂．可開立收據</small></div>
+      <div class="v-rank">${fl.slice(0, 4).map((o, i) => `<div class="v-rk" data-o="${o.id}"><span class="v-n num">${i + 1}</span>${airlineLogo(o.code, 26)}<span class="v-rt"><b>${alName(o)} ${fno(o)}</b><small class="num">去 ${o.dep} → ${o.arr}．回 ${esc(o.ret || '')}．${xfer(o)}</small>${i < 2 ? '<em class="v-badge">旅行社優惠價</em>' : ''}</span><b class="num">${money(o.price + adj)}</b></div>`).join('')}</div>`;
+    if (k === 'farely') return `${siteNav(k)}${srch([`<b>TPE → NRT</b>`, '3/20 – 3/24', '1 位成人'])}
+      <div class="sx-h">同一航班，各平台價格一次比 <small>綠色為最低價</small></div>
+      <table class="v-cmp"><thead><tr><th>航班</th><th>雲比價</th><th>旅程網</th><th>航空官網</th></tr></thead><tbody>${fl.slice(0, 5).map(o => { const ps = [o.price, o.price + 150, o.price + 300], mn = Math.min(...ps); return `<tr data-o="${o.id}"><td><span class="v-fn">${airlineLogo(o.code, 20)}<span><b>${fno(o)}</b><small class="num">${o.dep} → ${o.arr}</small></span></span></td>${ps.map(x => `<td class="num${x === mn ? ' low' : ''}">${money(x)}</td>`).join('')}</tr>`; }).join('')}</tbody></table>`;
     return `${siteNav(k)}${srch([`${IC.plane || '✈'}<b>台北 TPE</b> → <b>東京 NRT</b>`, '3/20（六）– 3/24（三）', `1 位成人．經濟艙${a.bag && a.bag !== 'carry' ? `．托運 ${a.bag === 'two' ? 2 : 1} 件` : ''}`])}
       <div class="sx-2col"><aside class="sx-side"><div class="sx-sh">轉機次數</div>${cbx('直飛', true)}${cbx('轉機 1 次', true)}
         <div class="sx-sh">去程出發時段</div>${qDef('high', 'time').options.map(o => cbx(`${o.title}<small>${o.sub}</small>`, !tsel.length || tsel.includes(o.id))).join('')}
@@ -2460,6 +2529,10 @@ function siteBody(k, kind){
     const pic = o => HOTEL_IMG[o.id] ? `<img src="${HOTEL_IMG[o.id]}" alt="" loading="lazy">` : illo(o.kind, o.hue);
     const adj = {stay:0, restly:-100, nestly:-300, tripgo:50}[k] || 0;
     const pr = (a.prio || []).filter(x => x !== 'none' && x !== 'x');
+    if (k === 'restly') return `${siteNav(k)}${srch(['<b>東京</b>', '3/20 – 3/24．4 晚', '1 位成人'])}<div class="v-split"><div class="v-map"><span class="v-road a"></span><span class="v-road b"></span><span class="v-river"></span>${hs.map((o, i) => `<span class="v-pin" style="left:${[18, 52, 34, 64][i]}%;top:${[22, 40, 66, 76][i]}%">${money(o.per + adj).replace('NT$ ', '$')}</span>`).join('')}<small class="v-ml">地圖檢視</small></div>
+      <div class="v-hl">${hs.map(o => `<div class="v-hi" data-o="${o.id}"><span class="v-hp">${pic(o)}</span><span class="v-rt"><b>${o.title}</b><small>${esc(o.sub.split('．')[0])}</small><small>評分 ${o.score}．${scoreWord(o.score)}</small></span><b class="num">${money(o.per + adj)}<small>／晚</small></b></div>`).join('')}</div></div>`;
+    if (k === 'tripgo') return `${siteNav(k)}${vTabs(1)}<div class="v-chips">${[['breakfast', '含早餐'], ['cancel', '免費取消'], ['station', '近車站'], ['laundry', '自助洗衣'], ['cheap', '價格優先']].map(([t, l]) => `<span class="${pr.includes(t) ? 'on' : ''}">${l}</span>`).join('')}</div>
+      <div class="v-hgrid">${hs.map(o => `<div class="v-hc" data-o="${o.id}"><span class="v-hci">${pic(o)}<em>${o.score}</em></span><b>${o.title}</b><small>${esc(o.sub.split('．')[0])}</small><span class="num"><b>${money(o.per + adj)}</b><small> 每晚</small></span></div>`).join('')}</div>`;
     if (k === 'nestly') return `${siteNav(k)}${srch(['<b>東京</b>', '3/20 – 3/24．4 晚', '1 位房客'])}<div class="sx-count"><b>東京超過 300 間房源</b><span class="sx-sort"><span class="on">整套房源</span><span>獨立房間</span><span>超讚房東</span></span></div><div class="sx-bnb">${hs.map((o, i) => `<div class="sx-bn" data-o="${o.id}"><span class="bn-img">${pic(o)}<i>♡</i></span><div class="bn-b"><div class="bn-r"><b>${o.title.split(' ')[0]}</b><span>★ ${(o.score / 2).toFixed(2)}</span></div><div class="sx-pm">${['整套公寓', '日式套房', '設計旅宿', '整套町屋'][i]}．${esc(o.sub.split('．')[0])}</div><div class="sx-pm">3月20日 – 24日</div><div class="num"><b>${money(o.per + adj)}</b> 晚</div></div></div>`).join('')}</div>`;
     const tagsOf = h => [h.tags.includes('breakfast') ? '含早餐' : null, h.nonref ? null : h.cancelDays ? '免費取消' : null, h.tags.includes('station') ? '近車站' : null, h.tags.includes('laundry') ? '自助洗衣' : null].filter(Boolean);
     return `${siteNav(k)}${srch(['<b>東京</b>', '3/20（六）– 3/24（三）．4 晚', '1 間房．1 位成人'])}
@@ -2740,7 +2813,7 @@ function askCard({title, questions, probe}){
       const isSel = id => multi ? (v || []).includes(id) : v === id;
       const last = page === N - 1;
       card.innerHTML = `<div class="qc-h"><span class="qc-t">${esc(title)}</span><span class="qc-n num">${page + 1} / ${N}</span><span class="qc-dots">${questions.map((_, i) => `<button type="button" class="${i === page ? 'on' : answered(i) ? 'ok' : ''}" data-go="${i}" aria-label="第 ${i + 1} 題"></button>`).join('')}</span></div>
-        <div class="qc-b"><div class="qc-q">${esc(q.q)}${multi ? '<span class="qc-multi">（可複選）</span>' : ''}</div>
+        <div class="qc-b"><div class="qc-q">${esc(q.q.replace(/（可複選）$/, ''))}${multi ? '<span class="qc-multi">（可複選）</span>' : ''}</div>
           <div class="qc-opts${q.pick ? '' : ' grid'}">${q.none && q.noneFirst ? optRow(q, {id:'none', title:q.noneTitle || '沒有特別偏好'}, isSel('none'), false) : ''}${visOpts(q, opts, v).map(o => optRow(q, o, isSel(o.id), Array.isArray(rec) ? rec.includes(o.id) : o.id === rec)).join('')}${q.none && !q.noneFirst ? optRow(q, {id:'none', title:q.noneTitle || '沒有特別偏好'}, isSel('none'), false) : ''}${MANY.includes(q.key) && opts.length > visOpts(q, opts, v).length ? `<button type="button" class="more-opts" data-more="1">顯示更多${q.key === 'flight' ? '航班' : '住宿'}（還有 ${opts.length - visOpts(q, opts, v).length} 個）${IC.chev}</button>` : ''}</div>
           ${q.other && q.redo ? `<label class="qc-other${(multi ? (v || []).includes('x') : v === 'x') ? ' sel' : ''}"><span class="qc-ol">其他</span><input class="qc-oi" id="qoi" value="${esc(oth[q.key] || '')}" placeholder="${esc(q.ph || '用自己的話告訴 Lumi')}"></label>` : ''}
           ${rep[q.key] ? `<div class="other-reply">${LOGO}<span>${esc(rep[q.key])}</span></div>` : ''}</div>
@@ -2870,7 +2943,7 @@ async function runTask(){
       if (stage.pay) setTrace(stage.key, 'done', '最後確認時一起付款');
     }
   } else {
-    await aiMsg(S.risk === 'low' ? '好的，交給我！我會直接完成所有安排，最後再請你確認行程。' : '好的，交給我！我會直接完成比價與訂位，最後再請你確認並一次付款。');
+    await aiMsg(S.risk === 'low' ? '好的，交給我！我會直接完成所有安排，最後再請你確認行程。' : '好的，交給我！我會直接完成比價與訂位，最後再由你決定要不要付款。');
     for (const stage of T.stages) {
       if (stage.search) await doSearch(stage);
       stage.questions.forEach(q => { S.task.answers[q.key] = q.pick ? recFor(q, S.task.answers, S.task) : q.def; S.task.by[q.key] = 'ai'; });
@@ -2972,7 +3045,7 @@ function finalConfirm(){
       ? `5天4夜的行程排好了！整體走「${ansText(qDef('low', 'route'), a.route)}」風格，${!tripsOf(a).length ? '全程待在東京市區' : tripsOf(a).map((k, i) => `第 ${4 - i} 天安排${DAYTRIP[k].place}一日遊`).join('、')}；交通以地鐵與 JR 為主，午晚餐以「${ansText(qDef('low', 'food'), a.food)}」為主${(a.diet || []).some(x => x !== 'none') ? '，並避開你的飲食限制' : ''}。每天從早到晚的安排都在右側，確認沒問題就按下方「確認行程，完成任務」。`
       : collabHigh
         ? `機票和住宿都已付款完成！航班「${ansText(qDef('high', 'flight'), a.flight)}」${money(payAmount('flight'))}，住宿「${ansText(qDef('high', 'hotel'), a.hotel)}」${money(payAmount('hotel'))}，合計 ${money(totalHigh(a))}。完整訂單在右側，確認無誤就按「確認訂單」，我會寄出確認信。`
-        : `訂單準備好了！機票「${ansText(qDef('high', 'flight'), a.flight)}」${money(payAmount('flight'))}，住宿「${ansText(qDef('high', 'hotel'), a.hotel)}」${money(payAmount('hotel'))}，合計 ${money(totalHigh(a))}。完整訂單在右側；請在下方選擇要付款的項目，可以一起付，也可以分開付。想調整的話，可以返回修改，或請我重新找。`;
+        : `訂單準備好了！機票「${ansText(qDef('high', 'flight'), a.flight)}」${money(payAmount('flight'))}，住宿「${ansText(qDef('high', 'hotel'), a.hotel)}」${money(payAmount('hotel'))}，合計 ${money(totalHigh(a))}。完整訂單在右側。要付款的項目請按金額右側的「付款」；不付款的話，直接按「結束任務」就可以。想調整的話，可以返回修改，或請我重新找。`;
     const d = await aiMsg(desc, 500);
     const box = document.createElement('div');
     $('.content', d).appendChild(box);
@@ -2982,13 +3055,13 @@ function finalConfirm(){
       await afterConfirm(); resolve();
     };
     const redo = async (kind, text) => {
-      box.innerHTML = ''; userMsg(`${payName(kind)}請再找找：${text}`);
+      box.innerHTML = ''; userMsg(text ? `${payName(kind)}請再找找：${text}` : `${payName(kind)}請再幫我找找其他選擇`);
       await refind(kind, text); offScriptTip();
-      await aiMsg(`了解，我依你的需求重新${kind === 'flight' ? '比價機票' : '找住宿'}。`, 400);
+      await aiMsg(text ? `了解，我依你的需求重新${kind === 'flight' ? '比價機票' : '找住宿'}。` : `好的，我排除目前這個選項，重新${kind === 'flight' ? '比價機票' : '找住宿'}。`, 400);
       const stg = TASKS.high.stages.find(s => s.key === kind);
       await doSearch(stg);
       stg.questions.forEach(q => { if (S.task.answers[q.key] === undefined) { S.task.answers[q.key] = recFor(q, S.task.answers, S.task); S.task.by[q.key] = 'ai-refind'; } });
-      const payStage = TASKS.high.stages.find(s => s.pay); payStage.questions.forEach(q => { if (S.task.answers[q.key] === undefined) S.task.answers[q.key] = recFor(q, S.task.answers, S.task); });
+      const payStage = TASKS.high.stages.find(s => s.pay); if (payStage) payStage.questions.forEach(q => { if (S.task.answers[q.key] === undefined) S.task.answers[q.key] = recFor(q, S.task.answers, S.task); });
       renderProgress(); stageNote(stg);
       await doBooking(kind);
       await finalConfirm(); resolve();
@@ -3001,28 +3074,23 @@ function finalConfirm(){
         if (!unpaid.length) {
           box.innerHTML = `<button type="button" class="doccard">${docCardHtml()}</button><div class="actions"><button type="button" class="btn" data-ok="1" data-final="1">確認訂單，完成任務</button></div>`;
         } else {
-          const pre = [].concat(a.payItems || []).filter(k => unpaid.includes(k)), sel = new Set(pre.length ? pre : unpaid);
           const fo = optOf(qDef('high', 'flight'), a.flight);
           box.innerHTML = `<button type="button" class="doccard">${docCardHtml()}</button>
-            <div class="paysel"><div class="ps-h">選擇要付款的項目</div>${['flight', 'hotel'].map(k => `<label class="ps-r${tx(k) ? ' paid' : ''}"><input type="checkbox" data-pk="${k}"${tx(k) ? ' checked disabled' : sel.has(k) ? ' checked' : ''}><span class="ps-t">${k === 'flight' ? airlineLogo(fo?.code, 28) : `<span class="each-img">${hotelPhoto(a.hotel)}</span>`}<span><b>${payName(k)}</b><small>${esc(ansText(qDef('high', k), a[k]))}</small></span></span><b class="num">${money(payAmount(k))}</b>${tx(k) ? '<span class="chip ok">已付款</span>' : ''}</label>`).join('')}</div>
-            <div class="actions"><button type="button" class="btn" data-paysel="1"></button><button type="button" class="btn ghost" data-edit="1">返回修改</button><button type="button" class="btn ghost" data-decline="1">${unpaid.length < 2 ? '不付款剩下的項目，結束任務' : '暫不付款，結束任務'}</button></div>
+            <div class="paysel"><div class="ps-h">付款項目</div>${['flight', 'hotel'].map(k => `<div class="ps-r${tx(k) ? ' paid' : ''}"><span class="ps-t">${k === 'flight' ? airlineLogo(fo?.code, 28) : `<span class="each-img">${hotelPhoto(a.hotel)}</span>`}<span><b>${payName(k)}</b><small>${esc(ansText(qDef('high', k), a[k]))}</small></span></span><b class="num">${money(payAmount(k))}</b>${tx(k) ? '<span class="chip ok">已付款</span>' : `<button type="button" class="btn sm" data-paysel="${k}">付款</button>`}</div>`).join('')}</div>
+            <div class="actions"><button type="button" class="btn ghost" data-edit="1">返回修改</button><button type="button" class="btn ghost" data-decline="1">結束任務</button></div>
             <div class="redo-row"><span class="faint">覺得方向不對？</span>${unpaid.map(k => `<button type="button" class="link" data-redo="${k}">請 Lumi 重新找${payName(k)}</button>`).join('')}</div><div class="each-need" data-need="any"></div>`;
-          const pb = $('[data-paysel]', box);
-          const picked = () => $$('[data-pk]', box).filter(x => x.checked && !x.disabled).map(x => x.dataset.pk);
-          const upd = () => { const ks = picked(); pb.disabled = !ks.length; pb.textContent = ks.length ? `付款所選項目．${money(ks.reduce((t, k) => t + payAmount(k), 0))}` : '請選擇要付款的項目'; };
-          $$('[data-pk]', box).forEach(x => x.onchange = upd); upd();
-          pb.onclick = async () => {
-            const ks = picked(); if (!ks.length) return;
+          $$('[data-paysel]', box).forEach(pb => pb.onclick = async () => {
+            const ks = [pb.dataset.paysel];
             const acc = await chooseAccount(ks); if (!acc) return;
             $$('button, input', box).forEach(x => x.disabled = true);
             userMsg(`付款：${ks.map(payName).join('、')}`);
-            S.task.payEach = S.task.payEach || ks.length < unpaid.length;
-            await doPay(ks.length === 2 ? 'all' : ks[0]); renderDoc(false); updateDocCard(); openSide('doc', false);
+            S.task.payEach = S.task.payEach || unpaid.length > 1;
+            await doPay(ks[0]); renderDoc(false); updateDocCard(); openSide('doc', false);
             const left = ['flight', 'hotel'].filter(k => !tx(k));
             if (!left.length) { box.innerHTML = ''; finish(S.task.payEach ? 'each' : 'all'); return; }
-            const nm = await aiMsg(`${ks.map(payName).join('、')}已付款完成。還有${left.map(payName).join('、')} ${money(left.reduce((t, k) => t + payAmount(k), 0))} 尚未付款，請在下方完成付款。`, 400);
+            const nm = await aiMsg(`${ks.map(payName).join('、')}已付款完成。還有${left.map(payName).join('、')} ${money(left.reduce((t, k) => t + payAmount(k), 0))} 尚未付款；要付款請按「付款」，不需要的話可以直接結束任務。`, 400);
             $('.content', nm).appendChild(box); draw('pay');
-          };
+          });
         }
       }
       scrollDown(true);
@@ -3037,10 +3105,10 @@ function finalConfirm(){
       });
       const dc = $('[data-decline]', box); if (dc) dc.onclick = async () => {
         const left = ['flight', 'hotel'].filter(k => !(S.task.tx || []).some(x => x.kind === k));
-        const ok = await confirmModal('確定不付款，直接結束任務？', `${left.map(payName).join('、')}不會被訂購，Lumi 整理好的方案仍會保留在右側。結束後一樣會請你填寫問卷。`, '不付款，結束任務');
+        const ok = await confirmModal((S.task.tx || []).length ? '確定結束任務？' : '確定不付款，直接結束任務？', `${left.map(payName).join('、')}不會付款，Lumi 整理好的方案仍會保留在右側。結束後一樣會請你填寫問卷。`, '結束任務');
         if (!ok) return;
         S.task.declined = {at:now(), items:left};
-        box.innerHTML = ''; userMsg(dc.textContent); finish((S.task.tx || []).length ? 'partial' : 'decline');
+        box.innerHTML = ''; userMsg((S.task.tx || []).length ? `${left.map(payName).join('、')}先不付款，結束任務` : '這次先不付款，結束任務'); finish((S.task.tx || []).length ? 'partial' : 'decline');
       };
       $$('[data-redo]', box).forEach(b => b.onclick = () => {
         const k = b.dataset.redo, slot = $(`[data-need="${$('[data-need="any"]', box) ? 'any' : k}"]`, box);
@@ -3807,7 +3875,7 @@ function drawPreview(body){
         <tr><td>請使用者確認的時機</td><td>每一個決策步驟</td><td>任務開始前</td><td>僅最後</td></tr>
         <tr><td>中途決策</td><td>使用者選擇或確認</td><td>AI 依事前偏好決定</td><td>AI 決定</td></tr>
         <tr><td>付款與訂位人資料</td><td>付款步驟時確認</td><td>任務開始前確認</td><td>直接使用預設資料</td></tr>
-        <tr><td>最後確認頁</td><td colspan="3">確認（付款）／返回修改／暫不付款並結束任務</td></tr>
+        <tr><td>最後確認頁</td><td colspan="3">逐項付款／返回修改／結束任務（可不付款）</td></tr>
       </tbody></table></div></div>`;
   const pick = (id, set) => $$(`#${id} .pill`).forEach(b => b.onclick = () => { set(b.dataset.v); $$(`#${id} .pill`).forEach(x => x.classList.toggle('sel', x === b)); });
   let withProfile = true;
