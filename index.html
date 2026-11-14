@@ -1014,6 +1014,7 @@ details.basis[open]{padding-bottom:12px}
 .paysel{display:grid;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
 .ps-h{font-size:14px;color:var(--ink-3)}
 .ps-r{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+.ps-all{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px 2px;border-top:1px dashed var(--line);margin-top:6px;font-size:15px}
 .ps-r>.btn.sm{flex:none;min-width:64px}
 .ps-r input{width:18px;height:18px;accent-color:var(--ink);flex:none}
 .ps-r .ps-t{flex:1;display:flex;align-items:center;gap:10px;min-width:0}.ps-r .ps-t span{display:flex;flex-direction:column;min-width:0}.ps-r small{color:var(--ink-3);font-size:13px}
@@ -1335,7 +1336,7 @@ const LOGO = `<svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><circle c
 const MODES = {collab:'協作確認', pref:'偏好引導', full:'全委託'};
 const RISK = {low:'不涉及金錢交易', high:'涉及金錢交易'};
 const ORDERS = {A:['low','high'], B:['high','low']};
-let PER_CELL = 6; // 每個模式 × 順序 的目標完成人數（3 模式 × 2 順序 × 6 = 36），可在「研究資訊」修改
+const PER_CELL = 5; // 每個模式 × 順序 的目標完成人數（3 模式 × 2 順序 × 5 = 30）；超過仍可繼續施測，顯示為「已滿」
 const ORDER_NAME = {A:'A：先不涉及金錢交易、後涉及金錢交易', B:'B：先涉及金錢交易、後不涉及金錢交易'};
 
 /* 平台皆為虛構，對應台灣常見的平台類型（比價、訂房、民宿短租、票券體驗、交通） */
@@ -2973,23 +2974,29 @@ async function runTask(){
 }
 
 /* ---------- 成果（側邊面板）、確認與完成 ---------- */
+/* 返回修改：只開放「有實際結果」的項目——AI 選出的結果（機票、住宿、行程等），或受測者自己回答過的題目；
+   AI 沒有實際作答、只套用預設值的偏好題（例如全委託的同行者、每日花費）不開放修改 */
+function editableQ(q){
+  if (!(q.pick || q.options || q.opts)) return false;
+  return !!q.pick || S.task.by?.[q.key] === 'user';
+}
 function docHtml(editing, editKey, confirmed){
   const risk = S.risk, a = S.task.answers, T = TASKS[risk];
   const row = q => {
-    const v = a[q.key], o = !Array.isArray(v) ? optOf(q, v) : null, paid = (S.task.tx || []).some(t => (t.kind === 'flight' && ['flight','payF'].includes(q.key)) || (t.kind === 'hotel' && ['hotel','room','payH'].includes(q.key))), canEdit = editing && !paid && (q.pick || (q.options || q.opts));
+    const v = a[q.key], o = !Array.isArray(v) ? optOf(q, v) : null, paid = (S.task.tx || []).some(t => (t.kind === 'flight' && ['flight','payF'].includes(q.key)) || (t.kind === 'hotel' && ['hotel','room','payH'].includes(q.key))), canEdit = editing && !paid && editableQ(q);
     return `<div class="rp-row"><span class="rp-k">${q.label}</span><span class="rp-v">${esc(ansText(q, v))}${o?.sub ? `<small>${esc(o.sub)}</small>` : ''}</span>${o?.price !== undefined ? `<span class="num rp-pr">${priceText(q, o)}</span>` : ''}${canEdit ? `<button type="button" class="btn soft sm" data-edit="${q.key}">${editKey === q.key ? '收起' : '修改'}</button>` : ''}</div>
       ${canEdit && editKey === q.key ? `<div class="rp-edit">${[...getOpts(q, a, S.task), ...(q.none ? [{id:'none', title:q.noneTitle || '沒有特別偏好'}] : [])].map(oo => `<button type="button" class="qo rich${(Array.isArray(v) ? v.includes(oo.id) : oo.id === v) ? ' sel' : ''}" data-pick="${oo.id}"><span class="rd"></span><span class="qo-m"><span class="qo-t">${esc(oo.title)}</span>${oo.sub ? `<span class="qo-s">${esc(oo.sub)}</span>` : ''}</span>${oo.price !== undefined ? `<span class="qo-p num">${priceText(q, oo)}</span>` : ''}</button>`).join('')}</div>` : ''}`;
   };
-  const sections = T.stages.map(s => `<div class="rp-sec"><div class="rp-sh">${s.label}</div><div class="rp-list">${s.questions.map(row).join('')}</div></div>`).join('');
+  const sections = T.stages.map(s => { const qs = s.questions.filter(editableQ); return qs.length ? `<div class="rp-sec"><div class="rp-sh">${s.label}</div><div class="rp-list">${qs.map(row).join('')}</div></div>` : ''; }).join('') || '<p class="faint" style="margin:8px 0">沒有可以修改的項目。</p>';
   const badge = confirmed ? (risk === 'high' && S.task.declined ? `<span class="chip">${(S.task.tx || []).length ? '部分付款' : '未付款'}</span>` : `<span class="chip ok">${risk === 'low' ? '已確認' : '已付款（模擬）'}</span>`) : editing ? '<span class="chip warn">修改中</span>' : (S.task.tx || []).length >= 2 ? '<span class="chip ok">已付款</span>' : '';
   if (risk === 'low') {
     return `<div class="doc"><div class="rp-hero low"><div><div class="eyebrow">行程</div><h3>東京5天4夜 自由行</h3><p class="muted">2027/3/20（六）– 3/24（三）．${esc(ansText(qDef('low', 'companions'), a.companions))}${ALL_LOW.find(x => x.id === a.lhotel) ? `．住宿：${esc(ALL_LOW.find(x => x.id === a.lhotel).name)}` : ''}</p></div>${badge}</div>
-      ${lowNotes(a)}${itinHtml(a)}<div class="itin-note">${IC.info || 'ⓘ'}<span>想調整個別景點或餐廳？完整版 Lumi 可以逐一修改；<b>本研究版只開放「返回修改」先前的選擇</b>，或請 Lumi 依你的回答重新安排。</span></div>${editing ? `<details class="basis" open><summary>修改這份行程的選擇</summary>${sections}</details>` : ''}</div>`;
+      ${lowNotes(a)}${itinHtml(a)}<div class="itin-note">${IC.info || 'ⓘ'}<span>想調整個別景點或餐廳？完整版 Lumi 可以逐一修改；<b>本研究版只開放「返回修改」先前的選擇</b>，或請 Lumi 依你的回答重新安排。</span></div>${editing ? `<details class="basis" open><summary>${S.task.mode === 'collab' ? '修改這份行程的選擇' : '修改 AI 做的選擇'}</summary>${sections}</details>` : ''}</div>`;
   }
 
   return `<div class="doc"><div class="rp-hero"><div><div class="eyebrow">訂單${S.task.orderNo ? `．${S.task.orderNo}` : ''}</div><h3>東京．3/20 – 3/24</h3><p class="muted">1 位成人．機票 + 住宿 4 晚</p></div><div class="rp-total">${badge}<span class="num">${money(totalHigh(a))}</span></div></div>
     ${orderCardsHtml(true)}
-    ${editing ? `<details class="basis" open><summary>修改訂單的選擇</summary>${sections}</details>` : ''}</div>`;
+    ${editing ? `<details class="basis" open><summary>${S.task.mode === 'collab' ? '修改訂單的選擇' : '修改 AI 做的選擇'}</summary>${sections}</details>` : ''}</div>`;
 }
 function orderCardsHtml(open){
   const a = S.task.answers;
@@ -3090,16 +3097,16 @@ function finalConfirm(){
         } else {
           const fo = optOf(qDef('high', 'flight'), a.flight);
           box.innerHTML = `<button type="button" class="doccard">${docCardHtml()}</button>
-            <div class="paysel"><div class="ps-h">付款項目</div>${['flight', 'hotel'].map(k => `<div class="ps-r${tx(k) ? ' paid' : ''}"><span class="ps-t">${k === 'flight' ? airlineLogo(fo?.code, 28) : `<span class="each-img">${hotelPhoto(a.hotel)}</span>`}<span><b>${payName(k)}</b><small>${esc(ansText(qDef('high', k), a[k]))}</small></span></span><b class="num">${money(payAmount(k))}</b>${tx(k) ? '<span class="chip ok">已付款</span>' : `<button type="button" class="btn sm" data-paysel="${k}">付款</button>`}</div>`).join('')}</div>
+            <div class="paysel"><div class="ps-h">付款項目</div>${['flight', 'hotel'].map(k => `<div class="ps-r${tx(k) ? ' paid' : ''}"><span class="ps-t">${k === 'flight' ? airlineLogo(fo?.code, 28) : `<span class="each-img">${hotelPhoto(a.hotel)}</span>`}<span><b>${payName(k)}</b><small>${esc(ansText(qDef('high', k), a[k]))}</small></span></span><b class="num">${money(payAmount(k))}</b>${tx(k) ? '<span class="chip ok">已付款</span>' : `<button type="button" class="btn sm" data-paysel="${k}">付款</button>`}</div>`).join('')}${unpaid.length === 2 ? `<div class="ps-all"><span>機票＋住宿合計 <b class="num">${money(payAmount('flight') + payAmount('hotel'))}</b></span><button type="button" class="btn sm" data-paysel="all">兩項一起付款</button></div>` : ''}</div>
             <div class="actions"><button type="button" class="btn ghost" data-edit="1">返回修改</button><button type="button" class="btn ghost" data-decline="1">結束任務</button></div>
             <div class="redo-row"><span class="faint">覺得方向不對？</span>${unpaid.map(k => `<button type="button" class="link" data-redo="${k}">請 Lumi 重新找${payName(k)}</button>`).join('')}</div><div class="each-need" data-need="any"></div>`;
           $$('[data-paysel]', box).forEach(pb => pb.onclick = async () => {
-            const ks = [pb.dataset.paysel];
+            const all = pb.dataset.paysel === 'all', ks = all ? [...unpaid] : [pb.dataset.paysel];
             const acc = await chooseAccount(ks); if (!acc) return;
             $$('button, input', box).forEach(x => x.disabled = true);
             userMsg(`付款：${ks.map(payName).join('、')}`);
-            S.task.payEach = S.task.payEach || unpaid.length > 1;
-            try { await doPay(ks[0]); } catch (e) { logErr(e); if (!tx(ks[0])) S.task.tx.push({kind:ks[0], amount:payAmount(ks[0]), card:'4242', no:'PAY-' + Math.random().toString(36).slice(2, 8).toUpperCase(), at:now(), recovered:true}); }
+            S.task.payEach = S.task.payEach || (!all && unpaid.length > 1);
+            try { await doPay(all ? 'all' : ks[0]); } catch (e) { logErr(e); ks.forEach(k => { if (!tx(k)) S.task.tx.push({kind:k, amount:payAmount(k), card:'4242', no:'PAY-' + Math.random().toString(36).slice(2, 8).toUpperCase(), at:now(), combined:all, recovered:true}); }); }
             renderDoc(false); updateDocCard(); openSide('doc', false);
             const left = ['flight', 'hotel'].filter(k => !tx(k));
             if (!left.length) { box.innerHTML = ''; finish(S.task.payEach ? 'each' : 'all'); return; }
@@ -3444,7 +3451,7 @@ function drawAdmin(){
   const cellDone = (m, o) => done.filter(p => p.mode === m && p.order === o).length;
   const cellMade = (m, o) => L.filter(p => p.mode === m && p.order === o && p.stage !== 'done').length;
   const cellRows = m => `<div class="cells">${['A', 'B'].map(o => { const d = cellDone(m, o), w = cellMade(m, o), need = Math.max(0, PER_CELL - d);
-    return `<div class="cell" title="${esc(ORDER_NAME[o])}"><b>${o}</b><span class="dots">${Array.from({length:PER_CELL}, (_, i) => `<i class="${i < d ? 'on' : i < d + w ? 'wip' : ''}"></i>`).join('')}</span><span class="num">${d}/${PER_CELL}</span><span class="${need ? 'need' : 'ok'}">${need ? `缺 ${need}` : '已滿'}${w ? `<small>（${w} 位待測）</small>` : ''}</span></div>`; }).join('')}</div>`;
+    return `<div class="cell" title="${esc(ORDER_NAME[o])}"><b>${o}</b><span class="dots">${Array.from({length:Math.max(PER_CELL, d + w)}, (_, i) => `<i class="${i < d ? 'on' : i < d + w ? 'wip' : ''}"></i>`).join('')}</span><span class="num">${d}/${PER_CELL}</span><span class="${need ? 'need' : 'ok'}">${need ? `缺 ${need}` : '已滿'}${w ? `<small>（${w} 位待測）</small>` : ''}</span></div>`; }).join('')}</div>`;
   body.innerHTML = `
     <div class="kpis k4">
       <div class="kpi"><div class="kl">完成進度</div><div class="kv">${done.length}<small> / ${TOTAL} 完成</small></div>
@@ -3627,29 +3634,18 @@ function taskBlockHtml(p, risk){
   if (!k) return `<div class="blank" style="height:auto;padding:24px">「${T.title}」尚未完成。</div>`;
   if (k.v !== 3) return `<p class="warnbox">這筆是舊版原型的資料，欄位與目前版本不同。請按「重新測試」後重新施測。</p>`;
   const q = k.questionnaire;
-  const byT = {user:'受測者', ai:'AI', pref:'依事前偏好'};
   const stRec = key => (k.stages || []).find(s => s.key === key);
-  const rows = T.stages.map(s => {
-    const r = stRec(s.key) || {};
-    const sec = r.shownAt && r.decidedAt ? ((r.decidedAt - r.shownAt) / 1000).toFixed(1) + ' 秒' : '—';
-    return `<tr class="grp"><td colspan="3"><b>${s.label}</b></td></tr>` +
-      s.questions.map(qq => {
-        const v = k.answers?.[qq.key], rec = qq.pick ? recFor(qq, k.answers || {}, null) : null;
-        return `<tr><td>${qq.label}${q?.steps?.[qq.key] ? `<br><small class="faint">希望：${STEP_OPT.find(o => o.id === q.steps[qq.key])?.t || ''}</small>` : ''}</td><td>${esc(ansText(qq, v, k))}${qq.pick && rec && v !== rec ? ' <span class="chip peach">非推薦</span>' : ''}${k.others?.[qq.key] ? `<br><span class="faint">其他：${esc(k.others[qq.key].text)}</span>` : ''}</td><td>${byT[k.by?.[qq.key]] || '—'}</td></tr>`;
-      }).join('');
-  }).join('');
-  const others = Object.entries(k.others || {}).map(([kk, o]) => { const qq = qDef(risk, kk); return `<div class="oth"><div class="faint" style="font-size:13px">${qq?.label || kk}</div><div>「${esc(o.text)}」</div>${o.reply ? `<div class="faint" style="font-size:14px">Lumi 回覆：${esc(o.reply)}</div>` : ''}<div style="font-size:14px">結果：${esc(ansText(qq, k.answers?.[kk], k))}</div></div>`; }).join('');
-  const edits = (k.edits || []).map(e => { const qq = qDef(risk, e.key); return qq ? `${qq.label}：${ansText(qq, e.from, k)} → ${ansText(qq, e.to, k)}` : ''; }).join('<br>') || '無';
   const pre = stRec('prefs-upfront');
   const items = q ? Object.keys(Q).map(key => `<div class="raw"><div class="raw-h">${Q[key].title}<span class="num">平均 ${f2(mean(q[key]))}</span></div>${Q[key].items.map((t, i) => `<div class="raw-i"><span>${esc(t)}</span><b class="num">${q[key]?.[i] ?? '—'}</b></div>`).join('')}</div>`).join('') : '';
-  return `<dl class="kv2"><dt>輸入的任務</dt><dd>${esc(k.prompt) || '—'}</dd><dt>完成時間</dt><dd>${k.durationSec != null ? k.durationSec + ' 秒' : '—'}</dd>
+  const pay = risk === 'high' ? (k.declined ? ((k.tx || []).length ? '部分付款' : '未付款') : '全部付款') : null;
+  const others = Object.entries(k.others || {}).filter(([, o]) => o?.text).map(([kk, o]) => `「${esc(o.text)}」<small class="faint">（${esc(qDef(risk, kk)?.label || kk)}）</small>`).join('<br>');
+  return `<dl class="kv2"><dt>輸入的任務</dt><dd>${esc(k.prompt) || '—'}</dd>
+      ${(k.refinds || []).length ? `<dt>請 Lumi 重新找</dt><dd>${k.refinds.map(x => `${x.kind === 'flight' ? '機票' : '住宿'}：「${esc(x.text)}」`).join('<br>')}</dd>` : ''}
+      ${others ? `<dt>自行輸入（其他）</dt><dd>${others}</dd>` : ''}
+      <dt>完成時間</dt><dd>${k.durationSec != null ? k.durationSec + ' 秒' : '—'}</dd>
       ${pre ? `<dt>事前問題作答</dt><dd>${((pre.decidedAt - pre.shownAt) / 1000).toFixed(1)} 秒</dd>` : ''}
-      <dt>查詢平台</dt><dd>${[...new Set((k.searches || []).flatMap(s => s.sites))].map(s => SITES[s]?.name || s).join('、') || '—'}</dd>
-      ${(k.refinds || []).length ? `<dt>請 Lumi 重新找</dt><dd>${k.refinds.map(x => `${x.kind === 'flight' ? '機票' : '住宿'}：「${esc(x.text)}」`).join('<br>')}</dd>` : ''}</dl>
-    <h5 class="dw-h5">受測者自行填寫的內容（其他）</h5>
-    ${others ? `<div class="others">${others}</div>` : '<p class="faint" style="font-size:14.5px;margin:0">沒有使用「其他」。</p>'}
-    <h5 class="dw-h5">每一題的選擇</h5>
-    <div class="tablewrap" style="margin-top:0"><table class="mini"><thead><tr><th>項目</th><th>結果</th><th>決定者</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <dt>返回修改</dt><dd>${(k.edits || []).length} 次</dd>
+      ${pay ? `<dt>付款結果</dt><dd>${pay}</dd>` : ''}</dl>
     <h5 class="dw-h5">問卷逐題作答（1 = 非常不同意，7 = 非常同意）</h5>
     ${q ? `<div class="raws">${items}</div>` : '<p class="faint" style="font-size:14.5px;margin:0">問卷尚未填寫。</p>'}`;
 }
@@ -3758,11 +3754,11 @@ function drawSummary(body){
 }
 /* ---------- 研究資訊（顯示在受測者的研究說明） ---------- */
 let STUDY = null;
-async function loadStudy(){ try { STUDY = await Store.get('config/study'); } catch { STUDY = null; } STUDY = {school:'國立臺灣科技大學', dept:'', name:'', advisor:'', email:'', years:'3', pin:'1234', perCell:'6', ...(STUDY || {})}; PER_CELL = Math.max(1, Math.min(20, parseInt(STUDY.perCell, 10) || 6)); return STUDY; }
+async function loadStudy(){ try { STUDY = await Store.get('config/study'); } catch { STUDY = null; } STUDY = {school:'國立臺灣科技大學', dept:'', name:'', advisor:'', email:'', years:'3', pin:'1234', ...(STUDY || {})}; return STUDY; }
 async function openStudyModal(){
   const st = await loadStudy();
   const m = document.createElement('div'); m.className = 'modal tall';
-  const f = [['school','學校'],['dept','系所'],['name','研究生姓名'],['advisor','指導教授'],['email','聯絡信箱'],['years','資料保存年限（年）'],['pin','預設通行碼（新增受測者時自動帶入）'],['perCell','每個組合的目標人數（3 模式 × 2 順序，總目標 = 此數 × 6）']];
+  const f = [['school','學校'],['dept','系所'],['name','研究生姓名'],['advisor','指導教授'],['email','聯絡信箱'],['years','資料保存年限（年）'],['pin','預設通行碼（新增受測者時自動帶入）']];
   m.innerHTML = `<form class="panel" style="max-width:520px" id="stf"><h2 style="font-size:24px">研究資訊</h2><p class="muted" style="margin:6px 0 16px;font-size:15px">前六項會顯示在受測者的「研究說明與知情同意」頁面。</p>
     <div style="display:grid;gap:12px">${f.map(([k, l]) => `<div class="field"><label for="st-${k}">${l}</label><input class="input" id="st-${k}" value="${esc(st[k] || '')}"></div>`).join('')}</div>
     <div class="actions" style="justify-content:flex-end"><button type="button" class="btn ghost" id="stc">取消</button><button class="btn" type="submit">儲存</button></div></form>`;
@@ -3824,85 +3820,38 @@ async function viewIntro(){
   $('#startBtn').onclick = async () => { if (S.preview) return go('profile'); S.p.consentAt = now(); S.p.stage = 'profile'; S.p.tasks = S.p.tasks || {}; await saveP(); routeParticipant(); };
 }
 
-/* CSV 第二列：每一欄對應的題目與計分方式 */
-function csvLabels(){
-  const TL = {low:'【不涉及金錢交易】', high:'【涉及金錢交易】'}, SN = k => (SCALES.find(x => x.k === k) || {name:Q[k].title}).name;
-  const LB = {pid:'受測者編號', mode:'代理自主層級（組別）', order:'任務順序（A＝先不涉及、後涉及金錢交易；B＝先涉及、後不涉及）', stage:'進度（done＝完成）', consent_at:'同意參與時間（UTC）', done_at:'完成時間（UTC）', eligible:'是否符合招募條件（1＝符合，0＝不符合）', ineligible_reason:'不符合招募條件的原因'};
-  PROFILE.forEach(f => {
-    LB[`p_${f.key}`] = `基本資料：${f.q}${f.type === 'scale' ? `（1＝${f.lo}，7＝${f.hi}）` : ''}`;
-    if (f.other) LB[`p_${f.key}_other`] = `基本資料：${f.q}（選「其他」時的自填內容）`;
-    if (f.type === 'scale') LB[`p_${f.key}_source`] = `「${f.q}」的資料來源（self＝受測者自填，researcher＝研究者補填）`;
-  });
-  for (const r of ['low', 'high']) {
-    const t = TL[r];
-    LB[`${r}_position`] = `${t}此任務為第幾個（1 或 2）`;
-    LB[`${r}_pay_outcome`] = `${t}付款結果（paid＝全部付款，partial＝部分付款，none＝未付款）`;
-    LB[`${r}_prompt`] = `${t}受測者送出的需求內容`;
-    LB[`${r}_duration_s`] = `${t}任務時間（秒）`;
-    LB[`${r}_n_edits`] = `${t}返回修改的次數`;
-    LB[`${r}_edit_opened`] = `${t}開啟修改畫面的次數`;
-    LB[`${r}_sites`] = `${t}AI 造訪的平台`;
-    LB[`${r}_upfront_rt_s`] = `${t}事前問題作答時間（秒，僅偏好引導）`;
-    TASKS[r].stages.forEach(s => {
-      LB[`${r}_rt_${s.key}_s`] = `${t}「${s.label}」步驟作答時間（秒，僅受測者作答時記錄）`;
-      s.questions.forEach(q => {
-        LB[`${r}_${q.key}`] = `${t}${q.q}`;
-        LB[`${r}_${q.key}_by`] = `${t}「${q.label}」由誰決定（user＝受測者，pref＝依事前偏好，ai＝AI 決定，ai-refind＝AI 重新搜尋後決定）`;
-        LB[`${r}_${q.key}_other`] = `${t}「${q.label}」選「其他」時的自填內容`;
-        if (q.pick) LB[`${r}_${q.key}_isrec`] = `${t}「${q.label}」是否為 AI 推薦的選項（1＝是，0＝否）`;
-      });
-    });
-    Object.keys(Q).forEach(k => {
-      Q[k].items.forEach((it, i) => {
-        LB[`${r}_${k}${i + 1}`] = k === 'amt' ? `${t}詢問次數：${it}（1＝太少，4＝剛剛好，7＝太多）`
-          : k === 'intr' ? `${t}${SN(k)} ${i + 1}：${Q[k].desc}${it}（${Q[k].en[i]}）（1＝非常不同意，7＝非常同意）`
-          : `${t}${SN(k)} ${i + 1}：${it}（1＝非常不同意，7＝非常同意）`;
-      });
-      if (Q[k].items.length > 1) LB[`${r}_${k}_mean`] = `${t}${SN(k)}（${Q[k].items.length} 題平均）`;
-    });
-  }
-  return LB;
-}
+/* CSV：欄位與 SPSS 資料檔（lumi_前測_三組各10人.sav）相同，前 40 欄可直接對照；最後幾欄為篩選資料用的補充資訊 */
+const CSV_ITEMS = [['intr', 0, '分心的'], ['intr', 1, '打擾的'], ['intr', 2, '被迫的'], ['intr', 3, '妨礙的'], ['intr', 4, '侵入的'], ['intr', 5, '侵犯的'], ['intr', 6, '突兀的'],
+  ['nec', 0, 'AI詢問與確認必要性'], ['nec', 1, 'AI在做決定前先問過我'], ['ctrl', 0, '能掌控AI做出的選擇'], ['ctrl', 1, '主要是由我做的'],
+  ['risk', 0, '蒙受金錢損失'], ['risk', 1, '我擔心結果不如預期'], ['amt', 0, '詢問次數']];
+const CSV_MEANS = [['intr', '干擾感'], ['nec', '必要性'], ['ctrl', '控制'], ['risk', '風險']];
+const CSV_TASKS = [['Task1', 'low', '不涉及金錢'], ['Task2', 'high', '涉及金錢']];
 function buildCsv(){
-  const head = ['pid','mode','order','stage','consent_at','done_at','eligible','ineligible_reason'].concat(PROFILE.flatMap(f => f.other ? [`p_${f.key}`, `p_${f.key}_other`] : f.type === 'scale' ? [`p_${f.key}`, `p_${f.key}_source`] : [`p_${f.key}`]));
-  const per = [];
-  for (const r of ['low','high']) {
-    per.push(`${r}_position`, ...(r === 'high' ? [`${r}_pay_outcome`] : []), `${r}_prompt`, `${r}_duration_s`, `${r}_n_edits`, `${r}_edit_opened`, `${r}_sites`, `${r}_upfront_rt_s`);
-    TASKS[r].stages.forEach(s => { per.push(`${r}_rt_${s.key}_s`); s.questions.forEach(q => per.push(`${r}_${q.key}`, `${r}_${q.key}_by`, `${r}_${q.key}_other`, ...(q.pick ? [`${r}_${q.key}_isrec`] : []))); });
-    Object.keys(Q).forEach(k => { Q[k].items.forEach((_, i) => per.push(`${r}_${k}${i + 1}`)); if (Q[k].items.length > 1) per.push(`${r}_${k}_mean`); });
-  }
-  const cols = head.concat(per);
+  const cols = ['受測者編號', '組別', '參與偏好',
+    ...CSV_TASKS.flatMap(([t]) => CSV_ITEMS.map(([, , n]) => `${t}_${n}`)),
+    ...CSV_TASKS.flatMap(([, , tn]) => CSV_MEANS.map(([, n]) => `${tn}_${n}平均`)),
+    '控制平均_兩任務',
+    '組別名稱', '任務順序', 'Task1_完成秒數', 'Task2_完成秒數', 'Task1_返回修改次數', 'Task2_返回修改次數', 'Task2_付款結果', '參與偏好來源', 'Task1_輸入的任務', 'Task2_輸入的任務', 'Task1_自行輸入', 'Task2_自行輸入', 'Task2_請Lumi重新找'];
   const qt = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const LB = csvLabels();
+  const num = v => v == null || isNaN(v) ? '' : String(Math.round(v * 10000) / 10000);
   const rows = AD.list.filter(inStats).map(p => {
-    const row = {pid:p.pid, mode:MODES[p.mode], order:p.order, stage:p.stage, consent_at:p.consentAt ? new Date(p.consentAt).toISOString() : '', done_at:p.doneAt ? new Date(p.doneAt).toISOString() : ''};
-    const el = eligibility(p.profile);
-    if (el) { row.eligible = el.ok ? 1 : 0; row.ineligible_reason = el.why.join('；'); }
-    if (p.profile) PROFILE.forEach(f => { const v = p.profile[f.key]; row[`p_${f.key}`] = Array.isArray(v) ? v.join('|') : v; if (f.other) row[`p_${f.key}_other`] = p.profile[f.key + '_other'] || ''; if (f.type === 'scale' && v != null) row[`p_${f.key}_source`] = p.profile.byAdmin?.[f.key] ? 'researcher' : 'self'; });
-    for (const r of ['low','high']) {
-      const k = p.tasks?.[r]; if (!k || k.v !== 3) continue; const qq = k.questionnaire || {};
-      row[`${r}_position`] = ORDERS[p.order].indexOf(r) + 1;
-      if (r === 'high') row[`${r}_pay_outcome`] = k.declined ? ((k.tx || []).length ? 'partial' : 'none') : 'paid';
-      row[`${r}_prompt`] = k.prompt; row[`${r}_duration_s`] = k.durationSec;
-      row[`${r}_n_edits`] = (k.edits || []).length; row[`${r}_edit_opened`] = k.editOpened || 0;
-      row[`${r}_sites`] = [...new Set((k.searches || []).flatMap(s => s.sites))].join('|');
-      const up = (k.stages || []).find(s => s.key === 'prefs-upfront'); if (up) row[`${r}_upfront_rt_s`] = ((up.decidedAt - up.shownAt) / 1000).toFixed(1);
-      TASKS[r].stages.forEach(s => {
-        const st = (k.stages || []).find(x => x.key === s.key);
-        if (st?.shownAt) row[`${r}_rt_${s.key}_s`] = ((st.decidedAt - st.shownAt) / 1000).toFixed(1);
-        s.questions.forEach(q => {
-          const v = k.answers?.[q.key];
-          row[`${r}_${q.key}`] = Array.isArray(v) ? v.map(x => ansText(q, x, k)).join('|') : ansText(q, v, k);
-          row[`${r}_${q.key}_by`] = k.by?.[q.key] || '';
-          row[`${r}_${q.key}_other`] = k.others?.[q.key]?.text || '';
-          if (q.pick && v !== undefined) row[`${r}_${q.key}_isrec`] = recFor(q, k.answers, null) === v ? 1 : 0;
-        });
-      });
-      Object.keys(Q).forEach(key => { (qq[key] || []).forEach((v, i) => row[`${r}_${key}${i + 1}`] = v); if (Q[key].items.length > 1) row[`${r}_${key}_mean`] = f2(mean(qq[key])).replace('—', ''); });
-    }
+    const row = {'受測者編號':p.pid, '組別':Object.keys(MODES).indexOf(p.mode) + 1, '組別名稱':MODES[p.mode], '任務順序':p.order};
+    const inv = p.profile?.involve; if (inv != null) { row['參與偏好'] = inv; row['參與偏好來源'] = p.profile.byAdmin?.involve ? '研究者補填' : '受測者自填'; }
+    const ctrlM = [];
+    CSV_TASKS.forEach(([t, r, tn]) => {
+      const k = p.tasks?.[r]; if (!k || k.v !== 3) return; const qq = k.questionnaire || {};
+      CSV_ITEMS.forEach(([key, i, n]) => row[`${t}_${n}`] = qq[key]?.[i]);
+      CSV_MEANS.forEach(([key, n]) => { const m = qq[key]?.length ? mean(qq[key]) : null; row[`${tn}_${n}平均`] = num(m); if (key === 'ctrl' && m != null) ctrlM.push(m); });
+      row[`${t}_完成秒數`] = k.durationSec; row[`${t}_返回修改次數`] = (k.edits || []).length;
+      row[`${t}_輸入的任務`] = k.prompt || '';
+      row[`${t}_自行輸入`] = Object.entries(k.others || {}).filter(([, o]) => o?.text).map(([kk, o]) => `${qDef(r, kk)?.label || kk}：${o.text}`).join('｜');
+      if (r === 'high') row['Task2_請Lumi重新找'] = (k.refinds || []).map(x => `${x.kind === 'flight' ? '機票' : '住宿'}：${x.text || '（未說明）'}`).join('｜');
+      if (r === 'high') row['Task2_付款結果'] = k.declined ? ((k.tx || []).length ? '部分付款' : '未付款') : '全部付款';
+    });
+    if (ctrlM.length === 2) row['控制平均_兩任務'] = num((ctrlM[0] + ctrlM[1]) / 2);
     return cols.map(c => qt(row[c])).join(',');
   });
-  return '﻿' + cols.join(',') + '\n' + cols.map(c => qt(LB[c] || '')).join(',') + '\n' + rows.join('\n');
+  return '﻿' + cols.join(',') + '\n' + rows.join('\n');
 }
 
 /* 備份與匯入：在不同儲存位置之間搬移資料（例如 claude.ai 版 → Vercel 版） */
@@ -3956,7 +3905,7 @@ function drawPreview(body){
         <tr><td>請使用者確認的時機</td><td>每一個決策步驟</td><td>任務開始前</td><td>僅最後</td></tr>
         <tr><td>中途決策</td><td>使用者選擇或確認</td><td>AI 依事前偏好決定</td><td>AI 決定</td></tr>
         <tr><td>付款與訂位人資料</td><td>付款步驟時確認</td><td>任務開始前確認</td><td>直接使用預設資料</td></tr>
-        <tr><td>最後確認頁</td><td colspan="3">逐項付款／返回修改／結束任務（可不付款）</td></tr>
+        <tr><td>最後確認頁</td><td colspan="3">逐項付款／返回修改／結束任務（可不付款）。返回修改只開放 AI 做出的選擇與受測者自己回答過的題目</td></tr>
       </tbody></table></div></div>`;
   const pick = (id, set) => $$(`#${id} .pill`).forEach(b => b.onclick = () => { set(b.dataset.v); $$(`#${id} .pill`).forEach(x => x.classList.toggle('sel', x === b)); });
   let withProfile = true;
