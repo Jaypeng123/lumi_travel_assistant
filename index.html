@@ -317,6 +317,10 @@ tr.clk{cursor:pointer} tr.clk:hover td{background:var(--surface-2)} tr.cur td{ba
 #claudeAuth.ok{color:var(--ok);border-color:var(--ok)}
 .kpis.k4{grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr))}
 .bar5.stack{display:flex}
+th.ck,td.ck{width:36px;padding-right:0}
+td.ck input,th.ck input{width:18px;height:18px;accent-color:var(--ink);cursor:pointer;vertical-align:middle}
+tr.excl td:not(.ck){opacity:.45}
+.excl-note{margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#FFF6E6;border:1px solid #F3D9A6;color:#7A5410;font-size:14.5px}
 .pf-ed .scale{padding-inline:0;grid-template-columns:repeat(7,30px);column-gap:6px}.pf-ed .dot{width:30px;height:30px}
 .pf-ed .scale .ends span:first-child{justify-self:start}.pf-ed .scale .ends span:last-child{justify-self:end}
 .colsel{font:inherit;font-size:inherit;color:inherit;border:1px solid var(--line-2);border-radius:8px;padding:2px 6px;background:var(--surface);cursor:pointer}
@@ -3254,6 +3258,7 @@ const stageText = p => {
   const [k, i] = st.split(':');
   return [{task:`進行任務 ${+i + 1}`, q:`填問卷 ${+i + 1}`, between:'任務間休息'}[k], 'warn'];
 };
+const inStats = p => !p.excluded; // 研究者可取消勾選，不列入統計與匯出
 let AD = {tab:'list', list:[], sel:null, loading:true, risk:null, edit:false, col:'intr'};
 
 /* ---------------- 受測者基本資料（依論文 3.1 招募條件設計） ---------------- */
@@ -3431,7 +3436,7 @@ const orderOpts = sel => `<option value="A" ${sel === 'A' ? 'selected' : ''}>A�
 function drawAdmin(){
   const body = $('#adBody'); if (!body) return;
   if (AD.tab === 'prev') return drawPreview(body);
-  if (AD.tab === 'sum') return drawSummary(body);
+  if (AD.tab === 'sum') { drawSummary(body); const ex = AD.list.filter(p => !inStats(p)); if (ex.length) body.insertAdjacentHTML('afterbegin', `<div class="excl-note">以下統計不含 ${ex.length} 位未勾選的受測者：${ex.map(p => esc(p.pid)).join('、')}</div>`); return; }
   const L = AD.list, done = L.filter(p => p.stage === 'done'), started = L.filter(p => p.stage && p.stage !== 'new' && p.stage !== 'done');
   const byMode = m => done.filter(p => p.mode === m).length;
   const TOTAL = PER_CELL * 6, PER_MODE = PER_CELL * 2;
@@ -3450,14 +3455,24 @@ function drawAdmin(){
     <div class="card" style="min-width:0">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">受測者列表</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="csv">匯出 CSV</button><button class="btn ghost sm" id="cpy">複製 CSV</button><button class="btn ghost sm" id="bak">備份資料</button><button class="btn ghost sm" id="imp">匯入備份</button><button class="btn sm" id="addBtn">${IC.plus.replace('<svg', '<svg width="16" height="16"')}新增受測者</button></div></div>
-      <div class="tablewrap">${L.length ? `<table><thead><tr><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th><select id="colSel" class="colsel" aria-label="要顯示的量表">${SCALES.map(x => `<option value="${x.k}"${x.k === AD.col ? ' selected' : ''}>${x.name}</option>`).join('')}</select> 不涉及／涉及</th><th>更新時間</th><th></th></tr></thead><tbody>
+      <div class="tablewrap">${L.length ? `<table><thead><tr><th class="ck"><input type="checkbox" id="ckAll" title="全部列入／全部不列入統計" aria-label="全部列入統計" ${L.every(inStats) ? 'checked' : ''}></th><th>編號</th><th>模式</th><th>任務順序</th><th>狀態</th><th>招募條件</th><th><select id="colSel" class="colsel" aria-label="要顯示的量表">${SCALES.map(x => `<option value="${x.k}"${x.k === AD.col ? ' selected' : ''}>${x.name}</option>`).join('')}</select> 不涉及／涉及</th><th>更新時間</th><th></th></tr></thead><tbody>
         ${L.map(p => { const [t, c] = stageText(p); const lo = p.tasks?.low?.questionnaire, hi = p.tasks?.high?.questionnaire; const el = eligibility(p.profile);
-          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}" data-id="${esc(p.pid)}"><td style="font-weight:500">${esc(p.pid)}${pName(p) ? `<small style="display:block;font-weight:400;color:var(--ink-2,#555)">${esc(pName(p))}</small>` : ''}${pNote(p) ? `<small class="faint" style="display:block;font-weight:400">備註：${esc(pNote(p))}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.[AD.col]))}／${f2(mean(hi?.[AD.col]))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
+          return `<tr class="clk ${AD.sel === p.pid ? 'cur' : ''}${inStats(p) ? '' : ' excl'}" data-id="${esc(p.pid)}"><td class="ck"><input type="checkbox" data-ck="${esc(p.pid)}" aria-label="${esc(p.pid)} 列入統計" ${inStats(p) ? 'checked' : ''}></td><td style="font-weight:500">${esc(p.pid)}${pName(p) ? `<small style="display:block;font-weight:400;color:var(--ink-2,#555)">${esc(pName(p))}</small>` : ''}${pNote(p) ? `<small class="faint" style="display:block;font-weight:400">備註：${esc(pNote(p))}</small>` : ''}</td><td>${MODES[p.mode]}</td><td>${ORDER_NAME[p.order]}</td><td><span class="chip ${c}">${t}</span></td><td>${el ? (el.ok ? '<span class="chip ok">符合</span>' : `<span class="chip warn" title="${esc(el.why.join('、'))}">不符 ${el.why.length} 項</span>`) : '<span class="faint">未填</span>'}</td><td class="num">${f2(mean(lo?.[AD.col]))}／${f2(mean(hi?.[AD.col]))}</td><td class="faint">${fmtT(p.updatedAt || p.createdAt)}</td><td class="faint">${IC.chevR}</td></tr>`; }).join('')}
         </tbody></table>` : `<div class="blank" style="height:auto;padding:36px">${AD.loading ? '讀取中…' : '還沒有受測者。按右上角「新增受測者」建立第一位。'}</div>`}</div>
     </div>`;
   $('#addBtn').onclick = openAddModal;
   { const cs = $('#colSel'); if (cs) { cs.onclick = e => e.stopPropagation(); cs.onchange = () => { AD.col = cs.value; drawAdmin(); }; } }
   $$('tr.clk').forEach(r => r.onclick = () => openDrawer(r.dataset.id));
+  const setIn = async (ps, on) => {
+    const changed = ps.filter(p => inStats(p) !== on);
+    changed.forEach(p => { if (on) delete p.excluded; else p.excluded = true; });
+    drawAdmin();
+    try { for (const p of changed) await Store.set('participants/' + p.pid, p); toast(on ? `已列入統計（${changed.length} 位）` : `已不列入統計（${changed.length} 位）`); }
+    catch { toast('儲存失敗，請重新整理後再試'); }
+  };
+  $$('[data-ck]').forEach(c => { c.onclick = e => e.stopPropagation(); c.onchange = () => setIn([AD.list.find(p => p.pid === c.dataset.ck)], c.checked); });
+  { const ca = $('#ckAll'); if (ca) { ca.onclick = e => e.stopPropagation(); ca.onchange = () => setIn(AD.list, ca.checked); } }
+  { const n = AD.list.length - AD.list.filter(inStats).length, b = $('#csv'); if (b) b.textContent = n ? `匯出 CSV（${AD.list.length - n} 位）` : '匯出 CSV'; }
   $('#csv').onclick = exportCsv;
   $('#bak').onclick = exportBackup;
   $('#imp').onclick = importBackup;
@@ -3650,8 +3665,8 @@ function alpha(rows){
 }
 
 function drawSummary(body){
-  const recs = [];
-  AD.list.forEach(p => ['low','high'].forEach(r => { const k = p.tasks?.[r]; if (k?.v === 3 && k.questionnaire) recs.push({p, r, k, q:k.questionnaire}); }));
+  const recs = [], LST = AD.list.filter(inStats);
+  LST.forEach(p => ['low','high'].forEach(r => { const k = p.tasks?.[r]; if (k?.v === 3 && k.questionnaire) recs.push({p, r, k, q:k.questionnaire}); }));
   const sel = (m, r) => recs.filter(x => (!m || x.p.mode === m) && (!r || x.r === r));
   const people = new Set(recs.map(x => x.p.pid)).size;
   const status = (ok, enough) => !enough ? '<span class="chip">樣本不足</span>' : ok ? '<span class="chip ok">達成</span>' : '<span class="chip warn">未達成，需調整</span>';
@@ -3659,7 +3674,7 @@ function drawSummary(body){
   const cm = Object.keys(MODES).map(m => mean(sel(m).map(x => mean(x.q.ctrl))));
   const ctrlOk = cm.every(v => v != null) && cm[0] > cm[1] && cm[1] > cm[2];
   // ② 風險操弄
-  const pairs = AD.list.map(p => { const lo = p.tasks?.low, hi = p.tasks?.high; return lo?.v === 3 && hi?.v === 3 && lo.questionnaire && hi.questionnaire ? mean(hi.questionnaire.risk) - mean(lo.questionnaire.risk) : null; }).filter(x => x != null);
+  const pairs = LST.map(p => { const lo = p.tasks?.low, hi = p.tasks?.high; return lo?.v === 3 && hi?.v === 3 && lo.questionnaire && hi.questionnaire ? mean(hi.questionnaire.risk) - mean(lo.questionnaire.risk) : null; }).filter(x => x != null);
   const tval = pairs.length > 1 && sd(pairs) ? mean(pairs) / (sd(pairs) / Math.sqrt(pairs.length)) : null;
   const higher = pairs.filter(x => x > 0).length;
   // ③ 信度
@@ -3670,7 +3685,7 @@ function drawSummary(body){
     return w.length ? w.map(x => `<span class="chip warn">${esc(x.t.length > 14 ? x.t.slice(0, 14) + '…' : x.t)}</span>`).join(' ') : '<span class="chip ok">無</span>'; };
   const alphas = ['intr','nec','ctrl','risk'].flatMap(k => ['low','high'].map(r => al(k, r))).filter(x => x != null);
   // ④ 流程時間
-  const total = AD.list.filter(p => p.stage === 'done' && p.consentAt && p.doneAt).map(p => (p.doneAt - p.consentAt) / 60000);
+  const total = LST.filter(p => p.stage === 'done' && p.consentAt && p.doneAt).map(p => (p.doneAt - p.consentAt) / 60000);
   // ⑤ 協作組步驟必要性
   const probes = {};
   recs.filter(x => x.p.mode === 'collab').forEach(x => (x.k.stages || []).forEach(s => { if (Array.isArray(s.probe)) (probes[x.r + ':' + s.key] = probes[x.r + ':' + s.key] || []).push(s.probe[0]); }));
@@ -3684,7 +3699,7 @@ function drawSummary(body){
   const ordRow = (r, key) => { const first = recs.filter(x => x.r === r && ORDERS[x.p.order][0] === r).map(x => mean(x.q[key])), second = recs.filter(x => x.r === r && ORDERS[x.p.order][1] === r).map(x => mean(x.q[key])); const d = mean(first) != null && mean(second) != null ? mean(second) - mean(first) : null; return {first, second, d}; };
   const ordRows = ['low','high'].flatMap(r => ['intr','risk'].map(k => ({r, k, ...ordRow(r, k)})));
   const ordOk = ordRows.every(o => o.d == null || Math.abs(o.d) < .5), ordEnough = ordRows.some(o => o.d != null);
-  const ppl = AD.list.filter(p => p.profile && p.stage !== 'ineligible');
+  const ppl = LST.filter(p => p.profile && p.stage !== 'ineligible');
   const pct = (m, key, vals) => { const g = ppl.filter(p => p.mode === m); return g.length ? Math.round(g.filter(p => vals.includes(p.profile[key])).length / g.length * 100) : null; };
   const BAL = [['agentUse', '用過 AI 代理', ['用過 1–2 次','經常使用']], ['aiCheck', '會仔細檢查或自己重做', ['仔細檢查，必要時修改','通常會自己重做']], ['aiFreq', '每週用 AI 3 次以上', ['每週 3 次以上','每天']]];
   const balRows = BAL.map(([k, label, vals]) => ({label, v:Object.keys(MODES).map(m => pct(m, k, vals))}));
@@ -3809,6 +3824,45 @@ async function viewIntro(){
   $('#startBtn').onclick = async () => { if (S.preview) return go('profile'); S.p.consentAt = now(); S.p.stage = 'profile'; S.p.tasks = S.p.tasks || {}; await saveP(); routeParticipant(); };
 }
 
+/* CSV 第二列：每一欄對應的題目與計分方式 */
+function csvLabels(){
+  const TL = {low:'【不涉及金錢交易】', high:'【涉及金錢交易】'}, SN = k => (SCALES.find(x => x.k === k) || {name:Q[k].title}).name;
+  const LB = {pid:'受測者編號', mode:'代理自主層級（組別）', order:'任務順序（A＝先不涉及、後涉及金錢交易；B＝先涉及、後不涉及）', stage:'進度（done＝完成）', consent_at:'同意參與時間（UTC）', done_at:'完成時間（UTC）', eligible:'是否符合招募條件（1＝符合，0＝不符合）', ineligible_reason:'不符合招募條件的原因'};
+  PROFILE.forEach(f => {
+    LB[`p_${f.key}`] = `基本資料：${f.q}${f.type === 'scale' ? `（1＝${f.lo}，7＝${f.hi}）` : ''}`;
+    if (f.other) LB[`p_${f.key}_other`] = `基本資料：${f.q}（選「其他」時的自填內容）`;
+    if (f.type === 'scale') LB[`p_${f.key}_source`] = `「${f.q}」的資料來源（self＝受測者自填，researcher＝研究者補填）`;
+  });
+  for (const r of ['low', 'high']) {
+    const t = TL[r];
+    LB[`${r}_position`] = `${t}此任務為第幾個（1 或 2）`;
+    LB[`${r}_pay_outcome`] = `${t}付款結果（paid＝全部付款，partial＝部分付款，none＝未付款）`;
+    LB[`${r}_prompt`] = `${t}受測者送出的需求內容`;
+    LB[`${r}_duration_s`] = `${t}任務時間（秒）`;
+    LB[`${r}_n_edits`] = `${t}返回修改的次數`;
+    LB[`${r}_edit_opened`] = `${t}開啟修改畫面的次數`;
+    LB[`${r}_sites`] = `${t}AI 造訪的平台`;
+    LB[`${r}_upfront_rt_s`] = `${t}事前問題作答時間（秒，僅偏好引導）`;
+    TASKS[r].stages.forEach(s => {
+      LB[`${r}_rt_${s.key}_s`] = `${t}「${s.label}」步驟作答時間（秒，僅受測者作答時記錄）`;
+      s.questions.forEach(q => {
+        LB[`${r}_${q.key}`] = `${t}${q.q}`;
+        LB[`${r}_${q.key}_by`] = `${t}「${q.label}」由誰決定（user＝受測者，pref＝依事前偏好，ai＝AI 決定，ai-refind＝AI 重新搜尋後決定）`;
+        LB[`${r}_${q.key}_other`] = `${t}「${q.label}」選「其他」時的自填內容`;
+        if (q.pick) LB[`${r}_${q.key}_isrec`] = `${t}「${q.label}」是否為 AI 推薦的選項（1＝是，0＝否）`;
+      });
+    });
+    Object.keys(Q).forEach(k => {
+      Q[k].items.forEach((it, i) => {
+        LB[`${r}_${k}${i + 1}`] = k === 'amt' ? `${t}詢問次數：${it}（1＝太少，4＝剛剛好，7＝太多）`
+          : k === 'intr' ? `${t}${SN(k)} ${i + 1}：${Q[k].desc}${it}（${Q[k].en[i]}）（1＝非常不同意，7＝非常同意）`
+          : `${t}${SN(k)} ${i + 1}：${it}（1＝非常不同意，7＝非常同意）`;
+      });
+      if (Q[k].items.length > 1) LB[`${r}_${k}_mean`] = `${t}${SN(k)}（${Q[k].items.length} 題平均）`;
+    });
+  }
+  return LB;
+}
 function buildCsv(){
   const head = ['pid','mode','order','stage','consent_at','done_at','eligible','ineligible_reason'].concat(PROFILE.flatMap(f => f.other ? [`p_${f.key}`, `p_${f.key}_other`] : f.type === 'scale' ? [`p_${f.key}`, `p_${f.key}_source`] : [`p_${f.key}`]));
   const per = [];
@@ -3819,7 +3873,8 @@ function buildCsv(){
   }
   const cols = head.concat(per);
   const qt = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const rows = AD.list.map(p => {
+  const LB = csvLabels();
+  const rows = AD.list.filter(inStats).map(p => {
     const row = {pid:p.pid, mode:MODES[p.mode], order:p.order, stage:p.stage, consent_at:p.consentAt ? new Date(p.consentAt).toISOString() : '', done_at:p.doneAt ? new Date(p.doneAt).toISOString() : ''};
     const el = eligibility(p.profile);
     if (el) { row.eligible = el.ok ? 1 : 0; row.ineligible_reason = el.why.join('；'); }
@@ -3847,7 +3902,7 @@ function buildCsv(){
     }
     return cols.map(c => qt(row[c])).join(',');
   });
-  return '﻿' + cols.join(',') + '\n' + rows.join('\n');
+  return '﻿' + cols.join(',') + '\n' + cols.map(c => qt(LB[c] || '')).join(',') + '\n' + rows.join('\n');
 }
 
 /* 備份與匯入：在不同儲存位置之間搬移資料（例如 claude.ai 版 → Vercel 版） */
